@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v18";
+const WORKER_VERSION = "v19";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -462,6 +462,29 @@ export default {
     try {
       if (url.pathname === "/login" && request.method === "POST") {
         return await handleLogin(request);
+      }
+
+      if (url.pathname === "/file" && request.method === "GET") {
+        // Attachments (homework files etc.) live behind the school's login, so they
+        // are fetched here with the user's own session and streamed back.
+        const path = url.searchParams.get("path") || "";
+        if (!/^\/storage\/[\w\-./%]+$/.test(path) || path.includes("..")) {
+          return jsonResponse({ error: "Path not allowed", path }, 403);
+        }
+        const cookie = request.headers.get("X-Session-Cookie");
+        if (!cookie) return jsonResponse({ error: "Missing X-Session-Cookie header. Log in first." }, 401);
+        const r = await fetch(`${SCHOOL_BASE}${path}`, {
+          headers: commonSchoolHeaders({ Cookie: cookie, Accept: "*/*" }),
+          redirect: "manual",
+        });
+        if (r.status >= 300 && r.status < 400) {
+          return jsonResponse({ error: "Unauthenticated. Сесія недійсна — увійдіть знову." }, 401);
+        }
+        if (!r.ok) return jsonResponse({ error: "File request failed", debug_status: r.status }, r.status === 404 ? 404 : 502);
+        const h = new Headers();
+        h.set("Content-Type", r.headers.get("content-type") || "application/octet-stream");
+        h.set("Cache-Control", "private, max-age=3600");
+        return withCors(new Response(r.body, { status: 200, headers: h }));
       }
 
       if (url.pathname === "/api" && request.method === "GET") {
