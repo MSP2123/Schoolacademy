@@ -19,6 +19,7 @@
     --red: #FFDAD6; --red-fg: #410002;
     --yellow: #FFE18E; --yellow-fg: #241A00;
     --outline: #777680;
+    --on-primary: #FFFFFF; --on-primary-sub: #E1E4FF; --card: #FFFFFF; --error: #BA1A1A;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -37,7 +38,7 @@
   .ibtn { position: relative; width: 48px; height: 48px; border-radius: 24px; border: 0; background: none; color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 0; }
   .ibtn.sq { width: 44px; height: 44px; border-radius: 16px; background: var(--surf2); }
   .ibtn .dot { position: absolute; top: 10px; right: 11px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); border: 2px solid var(--bg); }
-  .lang { width: 52px; height: 44px; border-radius: 22px; border: 0; background: var(--primary); color: #fff; font-size: 15px; font-weight: 700; padding: 0; }
+  .lang { width: 52px; height: 44px; border-radius: 22px; border: 0; background: var(--primary); color: var(--on-primary); font-size: 15px; font-weight: 700; padding: 0; }
   .who { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0 24px; }
   .who .nm { min-width: 0; font-size: 17px; line-height: 22px; font-weight: 600; text-wrap: balance; }
   .page { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -54,7 +55,7 @@
   .seg button { flex: 1; height: 48px; border: 0; font-size: 15px; font-weight: 600; background: var(--surf2); color: var(--ink); }
   .seg button:first-child { border-radius: 24px 8px 8px 24px; }
   .seg button:last-child { border-radius: 8px 24px 24px 8px; }
-  .seg button.on { background: var(--primary); color: #fff; }
+  .seg button.on { background: var(--primary); color: var(--on-primary); }
 
   /* day header */
   .dayh { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 0 12px; }
@@ -70,13 +71,13 @@
   .les:first-child { border-radius: 28px 28px 8px 8px; }
   .les:last-child { border-radius: 8px 8px 28px 28px; }
   .les:only-child { border-radius: 28px; }
-  .les.cur { background: var(--primary); color: #fff; }
+  .les.cur { background: var(--primary); color: var(--on-primary); }
   .badge { flex: none; width: 44px; height: 44px; border-radius: 16px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
-  .les.cur .badge { background: #fff; color: var(--primary); }
+  .les.cur .badge { background: var(--on-primary); color: var(--primary); }
   .lbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
   .lsub { font-size: 17px; line-height: 22px; font-weight: 600; overflow-wrap: anywhere; }
   .lmeta { font-size: 13px; line-height: 18px; color: var(--sub); }
-  .les.cur .lmeta { color: #E1E4FF; }
+  .les.cur .lmeta { color: var(--on-primary-sub); }
   .gr { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; }
   .chipg { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 12px; background: var(--chip); color: var(--chip-fg); font-size: 13px; font-weight: 500; }
   .chipg b { font-size: 16px; font-weight: 800; }
@@ -87,17 +88,17 @@
   .expand svg { transition: transform .2s; }
   .les.open .expand svg { transform: rotate(180deg); }
   .panel { display: none; margin-top: 12px; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--bg); color: var(--ink); }
-  .les.cur .panel { background: rgba(255,255,255,.16); color: #fff; }
+  .les.cur .panel { background: color-mix(in srgb, var(--on-primary) 16%, transparent); color: var(--on-primary); }
   .les.open .panel { display: flex; }
   .panel .k { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--sub); }
-  .les.cur .panel .k { color: #E1E4FF; }
+  .les.cur .panel .k { color: var(--on-primary-sub); }
   .panel .v { font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
 
   /* schedule */
   .days { display: flex; gap: 8px; padding: 12px 16px 0; }
   .dpill { flex: 1; border: 0; border-radius: 20px; background: var(--surf2); color: var(--ink); padding: 8px 0; display: flex; flex-direction: column; align-items: center; font-size: 13px; font-weight: 500; }
   .dpill b { font-size: 20px; font-weight: 700; }
-  .dpill.on { background: var(--primary); color: #fff; }
+  .dpill.on { background: var(--primary); color: var(--on-primary); }
   .srow { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--surf); border-radius: 8px; }
   .srow:first-child { border-radius: 28px 28px 8px 8px; }
   .srow:last-child { border-radius: 8px 8px 28px 28px; }
@@ -119,13 +120,13 @@
   .card h3 { margin: 4px 4px 12px; font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
   .card h3 small { font-size: 13px; font-weight: 600; color: var(--sub); align-self: center; white-space: nowrap; }
   .gtiles { display: flex; flex-wrap: wrap; gap: 8px; }
-  .gt { min-width: 64px; padding: 10px 12px; border-radius: 16px; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .gt { min-width: 64px; padding: 10px 12px; border-radius: 16px; background: var(--card); display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .gt b { font-size: 24px; line-height: 28px; font-weight: 800; }
   .gt span { font-size: 13px; color: var(--sub); }
   .gt.a { background: var(--pink); } .gt.t { background: var(--green); } .gt.n { background: var(--red); }
 
   /* canteen */
-  .bal { background: var(--primary); color: #fff; border-radius: 32px; padding: 20px 24px 24px; }
+  .bal { background: var(--primary); color: var(--on-primary); border-radius: 32px; padding: 20px 24px 24px; }
   .bal .l { font-size: 14px; opacity: .8; }
   .bal .n { font-size: 44px; line-height: 52px; font-weight: 800; margin-top: 6px; }
   .bal .n small { font-size: 22px; font-weight: 600; }
@@ -150,11 +151,11 @@
   .tx .tt b { display: block; font-size: 17px; }
   .tx .tt span { font-size: 13px; color: var(--sub); }
   .tx .am { font-size: 20px; font-weight: 800; }
-  .tx .line { background: #fff; border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .tx .line { background: var(--card); border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 
   /* more */
   .me { background: var(--chip); border-radius: 28px; padding: 16px; display: flex; align-items: center; gap: 16px; color: var(--chip-fg); }
-  .me .av { width: 64px; height: 64px; border-radius: 20px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; flex: none; }
+  .me .av { width: 64px; height: 64px; border-radius: 20px; background: var(--primary); color: var(--on-primary); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; flex: none; }
   .me b { font-size: 20px; line-height: 26px; display: block; }
   .mi { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: var(--surf); border: 0; width: 100%; text-align: left; font-size: 16px; font-weight: 600; color: var(--ink); border-radius: 8px; }
   .mi:first-child { border-radius: 28px 28px 8px 8px; }
@@ -162,7 +163,7 @@
   .mi .ic { width: 48px; height: 48px; border-radius: 16px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; flex: none; }
   .mi .t { flex: 1; }
   .mi.out { background: var(--red); color: var(--red-fg); border-radius: 28px; margin-top: 8px; }
-  .mi.out .ic { background: rgba(255,255,255,.6); color: var(--red-fg); }
+  .mi.out .ic { background: color-mix(in srgb, var(--bg) 60%, transparent); color: var(--red-fg); }
 
   /* feed */
   .fi { background: var(--surf); border-radius: 8px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
@@ -177,7 +178,7 @@
   .marks { display: inline-flex; gap: 4px; vertical-align: middle; margin-left: 6px; }
   .mk { width: 22px; height: 22px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--yellow); color: var(--yellow-fg); }
   .mk.cm { background: var(--pink); color: var(--pink-fg); }
-  .les.cur .mk { background: #fff; color: var(--primary); }
+  .les.cur .mk { background: var(--on-primary); color: var(--primary); }
   .gt { position: relative; }
   .gt .cdot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
   .switch .mid { position: relative; gap: 8px; font-size: 15px; white-space: nowrap; }
@@ -185,12 +186,28 @@
   .sblock .it { display: flex; align-items: center; gap: 10px; }
   .sblock .it .tx2 { flex: 1; min-width: 0; }
   .gbadge { flex: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.75); border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+  html[data-dark] .sblock { background: color-mix(in srgb, var(--sc) 32%, var(--surf)) !important; color: var(--ink) !important; }
+  html[data-dark] .gbadge { background: color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); }
+  html[data-dark] .sblock .th .badge { background: color-mix(in srgb, var(--ink) 16%, transparent); }
   .sblock .sep { height: 1px; background: rgba(0,0,0,.08); }
   .tx .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tx .chips span { background: #fff; border-radius: 10px; padding: 4px 10px; font-size: 12px; color: var(--sub); }
+  .tx .chips span { background: var(--card); border-radius: 10px; padding: 4px 10px; font-size: 12px; color: var(--sub); }
 
   .copybtn { border: 0; border-radius: 16px; background: var(--chip); color: var(--chip-fg); font-size: 13px; font-weight: 700; padding: 8px 14px; margin: 8px 8px 0 0; }
-  .toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #1B1B21; color: #fff; padding: 12px 20px; border-radius: 16px; font-size: 14px; z-index: 50; max-width: 90%; text-align: center; }
+  .toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 12px 20px; border-radius: 16px; font-size: 14px; z-index: 50; max-width: 90%; text-align: center; }
+
+  .look { background: var(--surf); border-radius: 28px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .look h3 { margin: 0 4px; font-size: 18px; font-weight: 700; }
+  .look .lbl { font-size: 12px; color: var(--sub); margin: 0 4px 6px; font-weight: 600; }
+  .look .seg { padding: 0; }
+  .look .seg button { height: 44px; font-size: 14px; background: var(--surf2); }
+  .look .seg button.on { background: var(--primary); color: var(--on-primary); }
+  .sw { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 2px; }
+  .sw button, .sw label { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; padding: 0; position: relative; }
+  .sw button.on { border-color: var(--ink); }
+  .sw label { background: conic-gradient(#e53935, #fdd835, #43a047, #1e88e5, #8e24aa, #e53935); display: block; overflow: hidden; }
+  .sw label.on { border-color: var(--ink); }
+  .sw label input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
@@ -216,10 +233,10 @@
   .login input[type=email], .login input[type=password], .login input[type=text] { width: 100%; height: 56px; border: 1px solid var(--outline); border-radius: 16px; padding: 0 16px; font-size: 16px; background: transparent; color: var(--ink); font-family: inherit; }
   .login input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
   .login .rem { display: flex; gap: 10px; align-items: center; margin: 16px 4px; font-size: 15px; }
-  .login .go { width: 100%; height: 56px; border: 0; border-radius: 28px; background: var(--primary); color: #fff; font-size: 17px; font-weight: 700; }
+  .login .go { width: 100%; height: 56px; border: 0; border-radius: 28px; background: var(--primary); color: var(--on-primary); font-size: 17px; font-weight: 700; }
   .login .go:disabled { opacity: .5; }
   .login .st { margin-top: 14px; font-size: 13px; white-space: pre-wrap; word-break: break-all; min-height: 18px; }
-  .login .st.error { color: #BA1A1A; }
+  .login .st.error { color: var(--error); }
   .login details { margin-top: 18px; font-size: 13px; color: var(--sub); }
 </style>
 </head>
@@ -276,6 +293,68 @@
   const getSession = () => { try { return localStorage.getItem(K_SESSION) || sessionStorage.getItem(K_SESSION); } catch { return null; } };
   const clearSession = () => { try { localStorage.removeItem(K_SESSION); sessionStorage.removeItem(K_SESSION); } catch {} };
   const setSession = (v, persist) => { try { clearSession(); (persist ? localStorage : sessionStorage).setItem(K_SESSION, v); } catch {} };
+
+  // ================= theme (light / dark + accent colour) =================
+  const DEFAULT_ACCENT = "#4355B9";
+  const ACCENTS = [["#4355B9", "Індиго"], ["#1565C0", "Синій"], ["#00796B", "Бірюза"], ["#2E7D32", "Зелений"], ["#C75B12", "Помаранч"], ["#C62828", "Червоний"], ["#B5338A", "Рожевий"], ["#7B3FBF", "Фіолет"]];
+  const hexToRgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  function rgbToHsl([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2;
+    if (mx !== mn) {
+      const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60;
+    }
+    return [h, s * 100, l * 100];
+  }
+  const hsl = (h, s, l) => `hsl(${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%)`;
+  function lum([r, g, b]) { const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); }
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100; const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+  }
+  function paletteFor(accent, dark) {
+    const [h, sRaw, lRaw] = rgbToHsl(hexToRgb(accent));
+    const s = Math.max(35, Math.min(sRaw, 90));
+    const solid = dark
+      ? { pink: ["#5B2A44", "#FFD8EC"], green: ["#1F4F42", "#BFEBDC"], red: ["#5C1F1A", "#FFDAD6"], yellow: ["#5A4300", "#FFE18E"] }
+      : { pink: ["#FFD8EC", "#2E1126"], green: ["#BFEBDC", "#00201A"], red: ["#FFDAD6", "#410002"], yellow: ["#FFE18E", "#241A00"] };
+    const common = { "--pink": solid.pink[0], "--pink-fg": solid.pink[1], "--green": solid.green[0], "--green-fg": solid.green[1], "--red": solid.red[0], "--red-fg": solid.red[1], "--yellow": solid.yellow[0], "--yellow-fg": solid.yellow[1] };
+    if (dark) {
+      return { ...common,
+        "--bg": hsl(h, 14, 9), "--ink": hsl(h, 18, 90), "--sub": hsl(h, 10, 72), "--surf": hsl(h, 11, 15), "--surf2": hsl(h, 11, 20), "--nav": hsl(h, 13, 12),
+        "--card": hsl(h, 11, 24), "--outline": hsl(h, 8, 55),
+        "--primary": hsl(h, s, 74), "--on-primary": hsl(h, 55, 14), "--on-primary-sub": hsl(h, 40, 24),
+        "--chip": hsl(h, 32, 28), "--chip-fg": hsl(h, 85, 91), "--error": "#FFB4AB" };
+    }
+    if (accent.toUpperCase() === DEFAULT_ACCENT) {
+      return { ...common, "--bg": "#FBF8FF", "--ink": "#1B1B21", "--sub": "#46464F", "--surf": "#EEEDF4", "--surf2": "#E8E7EF", "--nav": "#F4F2FA", "--card": "#FFFFFF", "--outline": "#777680",
+        "--primary": DEFAULT_ACCENT, "--on-primary": "#FFFFFF", "--on-primary-sub": "#E1E4FF", "--chip": "#DDE1FF", "--chip-fg": "#00164E", "--error": "#BA1A1A" };
+    }
+    let l = Math.min(lRaw, 46), rgb = hslToRgb(h, s, l);
+    while ((1.05) / (lum(rgb) + 0.05) < 4.5 && l > 15) { l -= 2; rgb = hslToRgb(h, s, l); }   // keep white text readable
+    return { ...common,
+      "--bg": hsl(h, 60, 99), "--ink": hsl(h, 15, 11), "--sub": hsl(h, 8, 31), "--surf": hsl(h, 16, 94), "--surf2": hsl(h, 16, 91), "--nav": hsl(h, 32, 96),
+      "--card": "#FFFFFF", "--outline": hsl(h, 6, 47),
+      "--primary": hsl(h, s, l), "--on-primary": "#FFFFFF", "--on-primary-sub": hsl(h, 90, 90),
+      "--chip": hsl(h, 80, 91), "--chip-fg": hsl(h, 80, 12), "--error": "#BA1A1A" };
+  }
+  const getTheme = () => lsGet("school_theme") || "auto";
+  const getAccent = () => lsGet("school_accent") || DEFAULT_ACCENT;
+  const mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme() {
+    const mode = getTheme();
+    const dark = mode === "dark" || (mode === "auto" && mq && mq.matches);
+    const pal = paletteFor(getAccent(), dark);
+    const root = document.documentElement;
+    for (const k in pal) root.style.setProperty(k, pal[k]);
+    root.style.colorScheme = dark ? "dark" : "light";
+    if (dark) root.setAttribute("data-dark", ""); else root.removeAttribute("data-dark");
+    const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", pal["--bg"]);
+  }
+  if (mq && mq.addEventListener) mq.addEventListener("change", applyTheme);
+  applyTheme();
 
   const $ = (id) => document.getElementById(id);
   const DAY = 86400000;
@@ -669,7 +748,7 @@
       const list = el("div", "list");
       d.slots.forEach((sl) => {
         const b = el("div", "sblock");
-        b.style.background = sl.color; b.style.color = "#1B1B21";
+        b.style.background = sl.color; b.style.color = "#1B1B21"; b.style.setProperty("--sc", sl.color);
         const th = el("div", "th"); th.append(el("div", "badge", sl.n), el("span", null, BELLS[sl.n] || "")); b.appendChild(th);
         sl.items.forEach((it, i) => {
           if (i) b.appendChild(el("div", "sep"));
@@ -943,6 +1022,31 @@
     me.appendChild(el("div", "av", (nm.trim().split(/\s+/)[1] || nm || "?").charAt(0).toUpperCase()));
     const b = el("div"); b.append(el("b", null, nm), el("span", null, S.profile && S.profile.class_name ? `${S.profile.class_name} клас` : "")); me.appendChild(b);
     page.appendChild(me);
+    // ----- appearance -----
+    const look = el("div", "look"); look.appendChild(el("h3", null, "Вигляд"));
+    const tbox = el("div"); tbox.appendChild(el("div", "lbl", "Тема"));
+    const seg = el("div", "seg");
+    [["auto", "Авто"], ["light", "Світла"], ["dark", "Темна"]].forEach(([k, t]) => {
+      const b = el("button", getTheme() === k ? "on" : "", t);
+      b.onclick = () => { lsSet("school_theme", k); applyTheme(); more(); };
+      seg.appendChild(b);
+    });
+    tbox.appendChild(seg); look.appendChild(tbox);
+    const cbox = el("div"); cbox.appendChild(el("div", "lbl", "Основний колір"));
+    const sw = el("div", "sw");
+    const cur = getAccent().toUpperCase();
+    ACCENTS.forEach(([hex, name]) => {
+      const b = el("button", cur === hex.toUpperCase() ? "on" : ""); b.style.background = hex; b.setAttribute("aria-label", name); b.title = name;
+      b.onclick = () => { lsSet("school_accent", hex); applyTheme(); more(); };
+      sw.appendChild(b);
+    });
+    const custom = el("label", ACCENTS.some(([h]) => h.toUpperCase() === cur) ? "" : "on"); custom.title = "Свій колір";
+    const ci = document.createElement("input"); ci.type = "color"; ci.value = getAccent();
+    ci.onchange = () => { lsSet("school_accent", ci.value.toUpperCase()); applyTheme(); more(); };
+    custom.appendChild(ci); sw.appendChild(custom);
+    cbox.appendChild(sw); look.appendChild(cbox);
+    page.appendChild(look);
+
     const list = el("div", "list");
     const item = (icon, text, fn, chevron) => {
       const r = el("button", "mi"); const ic = el("span", "ic"); ic.appendChild(svg(icon));
