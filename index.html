@@ -388,9 +388,10 @@
   };
 
   async function ensureProfile() {
+    if (!/^\d+$/.test(String(S.studentId || ""))) S.studentId = null;
     if (S.profile && S.studentId) return;
     const { data: d } = await api("/discover", true);
-    if (!d.current_student_id) throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
+    if (!/^\d+$/.test(String(d.current_student_id || ""))) throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
     S.profile = d;
     S.studentId = d.current_student_id;
     lsSet("school_student_id", S.studentId);
@@ -1012,6 +1013,8 @@
         setStatus((data.error || "Помилка входу.") + (data.debug_status ? "\n" + JSON.stringify(data, null, 1) : ""), true);
         loginBtn.disabled = false; return;
       }
+      // a new login must never inherit the previous account's cached data
+      S.profile = null; S.studentId = null; lsSet("school_student_id", ""); S.weeks.clear();
       setSession(data.session_cookie, $("remember").checked);
       $("password").value = "";
       start();

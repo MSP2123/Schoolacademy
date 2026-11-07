@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v14";
+const WORKER_VERSION = "v15";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -319,25 +319,45 @@ async function handleDiscover(request) {
     return jsonResponse({ error: "Could not parse header_data: " + err.message }, 502);
   }
   const user = data.user || {};
-  const classes = user.children_classes || {};
-  const names = user.children || {};
-  const children = Object.keys({ ...names, ...classes }).map((id) => ({
-    student_id: id,
-    name: typeof names[id] === "string" ? names[id] : "",
-    class_name: (classes[id] && classes[id].name) || "",
-  }));
+  const isId = (v) => /^\d+$/.test(String(v == null ? "" : v));
+  const classes = user.children_classes && !Array.isArray(user.children_classes) ? user.children_classes : {};
+  const names = user.children && !Array.isArray(user.children) ? user.children : {};
+  // Parent account: children listed. Student account: the user is the student.
+  let children = Object.keys({ ...names, ...classes })
+    .filter(isId)
+    .map((id) => ({
+      student_id: id,
+      name: typeof names[id] === "string" ? names[id] : "",
+      class_name: (classes[id] && classes[id].name) || "",
+    }));
   const cc = user.current_child || {};
-  const current = cc.id;
-  const cls = current && classes[current] ? classes[current] : {};
+  let current = isId(cc.id) ? String(cc.id) : children[0] ? children[0].student_id : null;
+  let studentName = cc.name || (children.find((c) => c.student_id === current) || {}).name || "";
+  let cls = current && classes[current] ? classes[current] : {};
+  let canteenBalance = cc.canteen_balance != null ? cc.canteen_balance : user.canteen_balance != null ? user.canteen_balance : null;
+  if (!current && isId(user.id)) {
+    // student logging in directly
+    current = String(user.id);
+    studentName = user.name || "";
+    children = [{ student_id: current, name: studentName, class_name: "" }];
+    const sc = user.student_class || user.studentClass || user.class || {};
+    cls = { id: user.student_class_id || user.class_id || sc.id || null, name: sc.name || user.class_name || "" };
+  }
   return jsonResponse({
     worker_version: WORKER_VERSION,
     group: user.group || null,
-    student_name: cc.name || "",
+    student_name: studentName,
     class_id: cls.id || null,
     class_name: cls.name || "",
-    canteen_balance: cc.canteen_balance != null ? cc.canteen_balance : user.canteen_balance != null ? user.canteen_balance : null,
-    current_student_id: current ? String(current) : children[0] ? children[0].student_id : null,
+    canteen_balance: canteenBalance,
+    current_student_id: current,
     children,
+    debug: {
+      user_keys: Object.keys(user).slice(0, 40),
+      children_keys: Object.keys(names),
+      classes_keys: Object.keys(classes),
+      current_child_id: cc.id == null ? null : String(cc.id),
+    },
   });
 }
 
