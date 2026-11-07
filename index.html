@@ -71,7 +71,7 @@
   button:disabled { opacity: 0.5; cursor: default; }
   button:hover:not(:disabled) { filter: brightness(0.95); }
 
-  .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .status { white-space: pre-wrap; word-break: break-all; font-size: 13px; margin-top: 10px; min-height: 18px; }
   .status.error { color: var(--grade-low); }
   .status.ok { color: var(--accent); }
 
@@ -230,7 +230,7 @@
       const data = await resp.json();
 
       if (!resp.ok || !data.success) {
-        setStatus(data.error || "Помилка входу.", true);
+        setStatus((data.error || "Помилка входу.") + (data.debug_status ? "\n" + JSON.stringify(data, null, 1) : ""), true);
         loginBtn.disabled = false;
         return;
       }
