@@ -165,7 +165,7 @@
 <script>
   // ---- config ----
   // Default Worker URL; can be overridden in-app (saved in localStorage) so no code edit is needed.
-  const DEFAULT_WORKER_URL = "https://school-proxy.REPLACE-ME.workers.dev";
+  const DEFAULT_WORKER_URL = "https://school-proxy.marksmurfik-d59.workers.dev";
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
   let WORKER_URL = (lsGet("school_worker_url") || DEFAULT_WORKER_URL).replace(/\/+$/, "");
