@@ -529,8 +529,8 @@
     if (a && b) return `${a} – ${b}`;
     return BELLS[n] || "";
   }
-  const lessonRoom = (l) => pick(l, ["room", "class_room", "classroom", "cabinet", "room_name"]);
-  const metaOf = (l) => [lessonRoom(l), l.teacher_name].filter(Boolean).join(" · ");
+  const lessonRoom = (l) => pick(l, ["class_room_name", "room", "class_room", "classroom", "cabinet", "room_name"]);
+  const metaOf = (l) => [lessonRoom(l), l.teacher_short_name || l.teacher_name].filter(Boolean).join(" · ");
   function gradeKind(g) {
     const v = String(g.grade_value ?? "").trim();
     const t = String(g.grade_type_name || "");
