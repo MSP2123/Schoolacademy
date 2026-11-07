@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v6";
+const WORKER_VERSION = "v7";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -67,15 +67,16 @@ function jsonResponse(obj, status = 200) {
 }
 
 function extractCsrfToken(html) {
-  const patterns = [
-    /name="_token"\s+value="([^"]+)"/,
-    /<meta name="csrf-token" content="([^"]+)"/,
-  ];
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-    if (match) return match[1];
+  // Tolerant: any <input|meta ...> tag mentioning _token / csrf-token, any
+  // attribute order, single or double quotes.
+  const tags = html.match(/<(?:input|meta)\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    if (!/name\s*=\s*["']?(?:_token|csrf-token)["']?/i.test(tag)) continue;
+    const m = tag.match(/(?:value|content)\s*=\s*["']([^"']+)["']/i);
+    if (m) return m[1];
   }
-  return null;
+  const js = html.match(/csrf[-_]?token["']?\s*[:=]\s*["']([A-Za-z0-9]{20,})["']/i);
+  return js ? js[1] : null;
 }
 
 // Returns every Set-Cookie header as an array of "name=value" strings,
@@ -137,7 +138,16 @@ async function handleLogin(request) {
 
   if (!token) {
     return jsonResponse(
-      { error: "Could not find CSRF token on login page. Site structure may have changed." },
+      {
+        error: "Could not find CSRF token on login page. Site structure may have changed.",
+        worker_version: WORKER_VERSION,
+        debug_status: loginPageResp.status,
+        debug_final_url: loginPageResp.url,
+        debug_content_type: loginPageResp.headers.get("content-type") || "",
+        debug_server: loginPageResp.headers.get("server") || "",
+        debug_length: loginPageHtml.length,
+        debug_body_snippet: loginPageHtml.slice(0, 600),
+      },
       502
     );
   }
