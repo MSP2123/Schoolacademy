@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v8";
+const WORKER_VERSION = "v9";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -111,13 +111,23 @@ function jarToCookieHeader(jar) {
   return Object.values(jar).join("; ");
 }
 
+// Plain browser-like headers (what the Python client sends). Used for the
+// login page + auth: adding X-Requested-With there makes the school answer
+// 401 JSON instead of the login page.
 function commonSchoolHeaders(extra = {}) {
   return {
     "User-Agent": USER_AGENT,
-    "X-Requested-With": "XMLHttpRequest",
-    Referer: `${SCHOOL_BASE}/login`,
     ...extra,
   };
+}
+
+// XHR-style headers, only for the JSON data endpoints.
+function xhrSchoolHeaders(extra = {}) {
+  return commonSchoolHeaders({
+    "X-Requested-With": "XMLHttpRequest",
+    Referer: `${SCHOOL_BASE}/`,
+    ...extra,
+  });
 }
 
 async function handleLogin(request) {
@@ -171,6 +181,8 @@ async function handleLogin(request) {
   const authResp = await fetch(`${SCHOOL_BASE}/auth`, {
     method: "POST",
     headers: commonSchoolHeaders({
+      Origin: SCHOOL_BASE,
+      Referer: `${SCHOOL_BASE}/login`,
       "Content-Type": "application/x-www-form-urlencoded",
       Cookie: jarToCookieHeader(jar),
     }),
@@ -243,7 +255,7 @@ async function proxyGet(request, targetPath) {
   const targetUrl = `${SCHOOL_BASE}${targetPath}?${params.toString()}`;
 
   const resp = await fetch(targetUrl, {
-    headers: commonSchoolHeaders({
+    headers: xhrSchoolHeaders({
       Cookie: sessionCookie,
       Accept: "application/json",
       ...xsrfHeader,
