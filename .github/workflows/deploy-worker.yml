@@ -1,7 +1,5 @@
 name: Deploy Worker
 on:
-  push:
-    paths: ["worker/**"]
   workflow_dispatch:
 jobs:
   deploy:
