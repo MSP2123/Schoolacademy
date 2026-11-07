@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v17";
+const WORKER_VERSION = "v18";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -359,6 +359,10 @@ async function handleDiscover(request) {
     // No embedded account JSON (e.g. a student account): fall back to the page's user-id meta tag.
     const meta = page.match(/<meta[^>]+name=["']user-id["'][^>]+content=["'](\d+)["']/i) ||
       page.match(/<meta[^>]+content=["'](\d+)["'][^>]+name=["']user-id["']/i);
+    if (!meta && /<input[^>]+name=["']password["']/i.test(page)) {
+      // The school is showing us the login form: this session is only a guest session.
+      return jsonResponse({ error: "Unauthenticated. Сесія недійсна — увійдіть знову.", worker_version: WORKER_VERSION }, 401);
+    }
     if (!meta) {
       const tag = (page.match(/<app-header[^>]{0,300}/i) || [""])[0];
       return jsonResponse(
