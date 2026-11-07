@@ -360,7 +360,7 @@
     const d = await proxiedFetch("/discover");
     const hit = d.found && d.found[0];
     if (!hit) {
-      throw new Error("Не вдалося визначити student_id/class_id автоматично.\n" + JSON.stringify(d.tried));
+      throw new Error("Не вдалося визначити student_id/class_id автоматично.\n" + JSON.stringify(d.tried, null, 1));
     }
     STUDENT_ID = hit.student_id; CLASS_ID = hit.class_id;
     lsSet("school_student_id", STUDENT_ID); lsSet("school_class_id", CLASS_ID);
