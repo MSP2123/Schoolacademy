@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v16";
+const WORKER_VERSION = "v17";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -218,6 +218,51 @@ async function handleLogin(request) {
     );
   }
 
+  // The school gives EVERY visitor a session cookie, so having one proves
+  // nothing. Check that the account is really logged in by loading the home
+  // page: a guest gets redirected to /login or sees the login form.
+  const homeResp = await fetch(`${SCHOOL_BASE}/`, {
+    headers: commonSchoolHeaders({ Cookie: jarToCookieHeader(jar), Accept: "text/html" }),
+    redirect: "manual",
+  });
+  mergeCookies(jar, extractAllCookies(homeResp));
+  const homeLoc = homeResp.headers.get("location") || "";
+  const homeHtml = homeResp.status >= 300 && homeResp.status < 400 ? "" : await homeResp.text();
+  const looksLoggedIn =
+    homeResp.status === 200 &&
+    !/<input[^>]+name=["']password["']/i.test(homeHtml) &&
+    (/name=["']user-id["']/i.test(homeHtml) || /header[_-]?data/i.test(homeHtml));
+  if (!looksLoggedIn) {
+    // Find out why: re-open the login page with this session and read any error message.
+    let reason = "";
+    try {
+      const lp = await fetch(`${SCHOOL_BASE}/login`, {
+        headers: commonSchoolHeaders({ Cookie: jarToCookieHeader(jar), Accept: "text/html" }),
+      });
+      const lh = await lp.text();
+      const msgs = [];
+      const re = /<(?:div|span|p|li|strong)[^>]*class=["'][^"']*(?:alert|error|invalid|danger|help-block|message)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span|p|li|strong)>/gi;
+      let m;
+      while ((m = re.exec(lh)) && msgs.length < 4) {
+        const t = m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        if (t && t.length < 300) msgs.push(t);
+      }
+      reason = msgs.join(" | ");
+    } catch {}
+    return jsonResponse(
+      {
+        error:
+          "Вхід не вдався: школа не прийняла ці дані." + (reason ? ` Повідомлення школи: ${reason}` : " Перевірте email і пароль."),
+        worker_version: WORKER_VERSION,
+        debug_auth_status: authResp.status,
+        debug_auth_location: location || "",
+        debug_home_status: homeResp.status,
+        debug_home_location: homeLoc,
+      },
+      401
+    );
+  }
+
   // Hand the FULL cookie jar back to the browser, not just two names.
   // The browser stores this string and resends it verbatim via
   // X-Session-Cookie on later requests.
@@ -305,18 +350,31 @@ async function handleDiscover(request) {
     headers: commonSchoolHeaders({ Cookie: sessionCookie, Accept: "text/html" }),
   });
   const page = await r.text();
-  const m = page.match(/:header_data="([^"]+)"/);
-  if (!m) {
-    return jsonResponse(
-      { error: "header_data not found on home page", debug_status: r.status, debug_length: page.length },
-      502
-    );
+  const m = page.match(/[:\w-]*header[_-]?data\s*=\s*"([^"]*)"/i);
+  let data = null;
+  if (m) {
+    try { data = JSON.parse(htmlUnescape(m[1])); } catch (err) { /* fall through to fallback */ }
   }
-  let data;
-  try {
-    data = JSON.parse(htmlUnescape(m[1]));
-  } catch (err) {
-    return jsonResponse({ error: "Could not parse header_data: " + err.message }, 502);
+  if (!data) {
+    // No embedded account JSON (e.g. a student account): fall back to the page's user-id meta tag.
+    const meta = page.match(/<meta[^>]+name=["']user-id["'][^>]+content=["'](\d+)["']/i) ||
+      page.match(/<meta[^>]+content=["'](\d+)["'][^>]+name=["']user-id["']/i);
+    if (!meta) {
+      const tag = (page.match(/<app-header[^>]{0,300}/i) || [""])[0];
+      return jsonResponse(
+        {
+          error: "Не вдалося визначити акаунт на головній сторінці школи.",
+          worker_version: WORKER_VERSION,
+          debug_status: r.status,
+          debug_length: page.length,
+          debug_has_login_form: /name=["']password["']/i.test(page),
+          debug_app_header_tag: tag,
+          debug_title: (page.match(/<title>([^<]*)/i) || [])[1] || "",
+        },
+        502
+      );
+    }
+    data = { user: { id: Number(meta[1]), group: "unknown" } };
   }
   const user = data.user || {};
   const isId = (v) => /^\d+$/.test(String(v == null ? "" : v));
