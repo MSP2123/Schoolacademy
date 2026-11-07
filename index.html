@@ -226,6 +226,9 @@
   .lightbox button { border: 0; border-radius: 20px; background: var(--chip); color: var(--chip-fg); font-size: 14px; font-weight: 700; padding: 10px 18px; }
   .thumb .ph { display: flex; align-items: center; justify-content: center; height: 90px; font-size: 13px; opacity: .7; }
 
+  .zoom { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; border-radius: 18px; background: var(--primary); color: var(--on-primary); font-size: 14px; font-weight: 700; }
+  .les.cur .zoom { background: var(--on-primary); color: var(--primary); }
+
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
   nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
@@ -394,6 +397,7 @@
     hw: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M9 9h6M9 13h4"/></svg>',
     chat: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>',
     cal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    video: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="M15 10.5l6-3.5v10l-6-3.5"/></svg>',
     group: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/></svg>',
   };
 
@@ -750,6 +754,13 @@
         add("Домашнє завдання", hw, hwFiles);
         if (lessonFiles.length) add("Матеріали уроку", "", lessonFiles);
         for (const g of ls.grades || []) if (g.comment) add(`Коментар (${g.grade_value})`, plain(g.comment));
+        const zoomUrl = String(ls.teacher_zoom_url || "").trim();
+        if (/^https?:\/\//i.test(zoomUrl)) {
+          const z = el("a", "zoom"); z.href = zoomUrl; z.target = "_blank"; z.rel = "noopener";
+          z.appendChild(svg(ICON.video)); z.appendChild(document.createTextNode("Zoom"));
+          z.onclick = (e) => e.stopPropagation();
+          panel.appendChild(z);
+        }
         body.appendChild(panel);
         row.appendChild(body);
         const ex = el("button", "expand"); ex.setAttribute("aria-label", "Деталі уроку"); ex.appendChild(svg(ICON.chev));
