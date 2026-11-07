@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v9";
+const WORKER_VERSION = "v10";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -299,7 +299,14 @@ async function handleDiscover(request) {
         headers: commonSchoolHeaders({ Cookie: sessionCookie, Accept: "text/html" }),
       });
       const html = await r.text();
-      tried.push({ path, status: r.status, length: html.length });
+      const snippets = [];
+      const sre = /(student|pupil|class|daybook|diary|child)[^<\n]{0,90}/gi;
+      let sm;
+      while ((sm = sre.exec(html)) && snippets.length < 25) {
+        snippets.push(html.slice(Math.max(0, sm.index - 40), sm.index + 100).replace(/\s+/g, " "));
+      }
+      const links = [...html.matchAll(/(?:href|src|action)=["']([^"']+)["']/gi)].map((x) => x[1]).filter((u) => !/\.(css|png|jpg|svg|ico|woff2?)(\?|$)/i.test(u)).slice(0, 40);
+      tried.push({ path, status: r.status, length: html.length, title: (html.match(/<title>([^<]*)/i) || [])[1], links, snippets });
       const re = /daybook\/get\/(\d+)\/(\d+)/g;
       let m;
       while ((m = re.exec(html))) found.push({ student_id: m[1], class_id: m[2], from: path });
