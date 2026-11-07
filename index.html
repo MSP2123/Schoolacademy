@@ -1,42 +1,406 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>School</title>
-
-<!-- recolored version of the real school logo (navy/periwinkle duotone) -->
-<link rel="icon" href="https://wsrv.nl/?url=school.academy.com.ua/images/facebook_school.png&filt=duotone&start=14173a&stop=d7d9f5&output=png">
-<link rel="apple-touch-icon" href="https://wsrv.nl/?url=school.academy.com.ua/images/facebook_school.png&filt=duotone&start=14173a&stop=d7d9f5&w=180&h=180&fit=cover&output=png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#14173a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="School">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Щоденник — прототип</title>
 <style>
-  html, body {
-    margin: 0; height: 100%; background: #14173a;
-    display: flex; align-items: center; justify-content: center;
-    font-family: system-ui, sans-serif; color: #d7d9f5;
+  :root {
+    --ink: #1c1f26;
+    --paper: #fafaf8;
+    --line: #dcdad4;
+    --accent: #2f5d50;
+    --accent-soft: #e4ede9;
+    --muted: #6b6f76;
+    --grade-low: #b5493a;
+    --grade-mid: #b8862f;
+    --grade-high: #2f5d50;
   }
-  .spinner {
-    width: 36px; height: 36px; border-radius: 50%;
-    border: 4px solid #c7c9e8; border-top-color: #1c3fae;
-    animation: spin 0.8s linear infinite; margin-bottom: 12px;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 24px 16px 80px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .wrap { text-align: center; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+  input[type="email"], input[type="password"], input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 15px;
+    background: var(--paper);
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .checkbox-row label { margin: 0; font-size: 14px; color: var(--ink); }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 18px;
+    width: 100%;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button:hover:not(:disabled) { filter: brightness(0.95); }
+
+  .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .status.error { color: var(--grade-low); }
+  .status.ok { color: var(--accent); }
+
+  #app-view { display: none; }
+
+  .day-block { margin-bottom: 22px; }
+  .day-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+  .lesson-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+  }
+  .lesson-row:last-child { border-bottom: none; }
+  .lesson-name { font-size: 14px; }
+  .lesson-comment { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .grades { display: flex; gap: 6px; flex-shrink: 0; }
+  .grade-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .feed-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-time { font-size: 12px; color: var(--muted); }
+  .feed-title { font-size: 14px; margin-top: 2px; }
+
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 24px 0 10px; }
+  .logout-link { font-size: 13px; color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="spinner"></div>
-    <div>Opening school portal…</div>
+<div class="wrap">
+
+  <div id="login-view">
+    <h1>Щоденник</h1>
+    <div class="subtitle">Щоденник оцінок</div>
+    <div class="card">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com">
+
+      <label for="password">Пароль</label>
+      <input type="password" id="password">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="remember" checked>
+        <label for="remember">Запам'ятати мене</label>
+      </div>
+
+      <details style="margin-top:14px;font-size:13px;color:var(--muted)">
+        <summary>Налаштування сервера</summary>
+        <label for="worker-url">Worker URL</label>
+        <input type="text" id="worker-url" placeholder="https://school-proxy.xxx.workers.dev">
+      </details>
+
+      <button id="login-btn">Увійти</button>
+      <div class="status" id="login-status"></div>
+    </div>
   </div>
-  <script>
-    // straight redirect into the real, fully-working site — no proxying, so login works normally
-    window.location.replace("https://school.academy.com.ua/");
-  </script>
+
+  <div id="app-view">
+    <div class="top-bar">
+      <h1>Щоденник</h1>
+      <span class="logout-link" id="logout-btn">Вийти</span>
+    </div>
+
+    <div class="section-title">Оцінки цього тижня</div>
+    <div class="card" id="daybook-container">
+      <div class="status">Завантаження...</div>
+    </div>
+
+    <div class="section-title">Стрічка</div>
+    <div class="card" id="feed-container">
+      <div class="status">Завантаження...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- config ----
+  // Default Worker URL; can be overridden in-app (saved in localStorage) so no code edit is needed.
+  const DEFAULT_WORKER_URL = "https://school-proxy.REPLACE-ME.workers.dev";
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+  let WORKER_URL = (lsGet("school_worker_url") || DEFAULT_WORKER_URL).replace(/\/+$/, "");
+  const STORAGE_KEY_SESSION = "school_session_cookie";
+  let STUDENT_ID = lsGet("school_student_id");
+  let CLASS_ID = lsGet("school_class_id");
+
+  const loginView = document.getElementById("login-view");
+  const appView = document.getElementById("app-view");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const rememberInput = document.getElementById("remember");
+  const loginBtn = document.getElementById("login-btn");
+  const loginStatus = document.getElementById("login-status");
+  const logoutBtn = document.getElementById("logout-btn");
+
+  const workerInput = document.getElementById("worker-url");
+  workerInput.value = WORKER_URL.includes("REPLACE-ME") ? "" : WORKER_URL;
+  workerInput.addEventListener("change", () => {
+    const v = workerInput.value.trim().replace(/\/+$/, "");
+    if (v) { WORKER_URL = v; lsSet("school_worker_url", v); }
+  });
+
+  function setStatus(msg, isError) {
+    loginStatus.textContent = msg;
+    loginStatus.className = "status " + (isError ? "error" : "ok");
+  }
+
+  function gradeColor(value) {
+    const n = parseInt(value, 10);
+    if (isNaN(n)) return "var(--muted)";
+    if (n <= 4) return "var(--grade-low)";
+    if (n <= 7) return "var(--grade-mid)";
+    return "var(--grade-high)";
+  }
+
+  async function login() {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      setStatus("Заповніть усі поля.", true);
+      return;
+    }
+
+    const typed = workerInput.value.trim().replace(/\/+$/, "");
+    if (typed) { WORKER_URL = typed; lsSet("school_worker_url", typed); }
+    if (WORKER_URL.includes("REPLACE-ME")) {
+      setStatus("Вкажіть Worker URL у налаштуваннях сервера.", true);
+      return;
+    }
+
+    loginBtn.disabled = true;
+    setStatus("Вхід...", false);
+
+    try {
+      const resp = await fetch(`${WORKER_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, remember: rememberInput.checked }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || !data.success) {
+        setStatus(data.error || "Помилка входу.", true);
+        loginBtn.disabled = false;
+        return;
+      }
+
+      sessionStorage.setItem(STORAGE_KEY_SESSION, data.session_cookie);
+      showApp();
+    } catch (err) {
+      setStatus("Не вдалося з'єднатися з сервером: " + err.message, true);
+      loginBtn.disabled = false;
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+    STUDENT_ID = CLASS_ID = null;
+    lsSet("school_student_id", ""); lsSet("school_class_id", "");
+    appView.style.display = "none";
+    loginView.style.display = "block";
+    loginBtn.disabled = false;
+    setStatus("", false);
+  }
+
+  async function proxiedFetch(path) {
+    const sessionCookie = sessionStorage.getItem(STORAGE_KEY_SESSION);
+    const resp = await fetch(`${WORKER_URL}${path}`, {
+      headers: { "X-Session-Cookie": sessionCookie },
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(JSON.stringify(data, null, 2));
+    }
+    return data;
+  }
+
+  function renderDaybook(json) {
+    const container = document.getElementById("daybook-container");
+    const weekDays = (json.data && json.data.week_days) || json.week_days || [];
+    container.innerHTML = "";
+
+    let hasAnyGrades = false;
+
+    for (const day of weekDays) {
+      const lessonsWithGrades = (day.lessons || []).filter(l => l.grades && l.grades.length);
+      if (!lessonsWithGrades.length) continue;
+      hasAnyGrades = true;
+
+      const dayBlock = document.createElement("div");
+      dayBlock.className = "day-block";
+
+      const title = document.createElement("div");
+      title.className = "day-title";
+      title.textContent = `${day.day_name} (${day.date})`;
+      dayBlock.appendChild(title);
+
+      for (const lesson of lessonsWithGrades) {
+        for (const grade of lesson.grades) {
+          const row = document.createElement("div");
+          row.className = "lesson-row";
+
+          const nameCol = document.createElement("div");
+          const nameEl = document.createElement("div");
+          nameEl.className = "lesson-name";
+          nameEl.textContent = lesson.subject_name + (grade.grade_type_name ? ` — ${grade.grade_type_name}` : "");
+          nameCol.appendChild(nameEl);
+          if (grade.comment) {
+            const commentEl = document.createElement("div");
+            commentEl.className = "lesson-comment";
+            commentEl.textContent = grade.comment;
+            nameCol.appendChild(commentEl);
+          }
+
+          const pillWrap = document.createElement("div");
+          pillWrap.className = "grades";
+          const pill = document.createElement("span");
+          pill.className = "grade-pill";
+          pill.style.background = gradeColor(grade.grade_value);
+          pill.textContent = grade.grade_value;
+          pillWrap.appendChild(pill);
+
+          row.appendChild(nameCol);
+          row.appendChild(pillWrap);
+          dayBlock.appendChild(row);
+        }
+      }
+      container.appendChild(dayBlock);
+    }
+
+    if (!hasAnyGrades) {
+      container.innerHTML = '<div class="status">Оцінок цього тижня ще немає.</div>';
+    }
+  }
+
+  function renderFeed(json) {
+    const container = document.getElementById("feed-container");
+    const items = (json.data && json.data.items) || [];
+    container.innerHTML = "";
+
+    if (!items.length) {
+      container.innerHTML = '<div class="status">Немає нових подій.</div>';
+      return;
+    }
+
+    for (const item of items.slice(0, 15)) {
+      const el = document.createElement("div");
+      el.className = "feed-item";
+      const t = document.createElement("div");
+      t.className = "feed-time"; t.textContent = item.time_formatted || "";
+      const ti = document.createElement("div");
+      ti.className = "feed-title"; ti.textContent = item.title || "";
+      el.append(t, ti);
+      container.appendChild(el);
+    }
+  }
+
+  function showErr(id, msg) {
+    const c = document.getElementById(id);
+    c.innerHTML = "";
+    const pre = document.createElement("pre");
+    pre.className = "status error";
+    pre.style.cssText = "white-space:pre-wrap;font-size:11px;";
+    pre.textContent = msg;
+    c.appendChild(pre);
+  }
+
+  async function ensureIds() {
+    if (STUDENT_ID && CLASS_ID) return;
+    const d = await proxiedFetch("/discover");
+    const hit = d.found && d.found[0];
+    if (!hit) {
+      throw new Error("Не вдалося визначити student_id/class_id автоматично.\n" + JSON.stringify(d.tried));
+    }
+    STUDENT_ID = hit.student_id; CLASS_ID = hit.class_id;
+    lsSet("school_student_id", STUDENT_ID); lsSet("school_class_id", CLASS_ID);
+  }
+
+  async function loadData() {
+    try {
+      await ensureIds();
+    } catch (err) {
+      showErr("daybook-container", err.message);
+    }
+    if (!STUDENT_ID || !CLASS_ID) return;
+    try {
+      const daybookJson = await proxiedFetch(`/daybook?student_id=${STUDENT_ID}&class_id=${CLASS_ID}`);
+      renderDaybook(daybookJson);
+    } catch (err) {
+      showErr("daybook-container", err.message);
+    }
+
+    try {
+      const feedJson = await proxiedFetch(`/feed?page=1`);
+      renderFeed(feedJson);
+    } catch (err) {
+      showErr("feed-container", err.message);
+    }
+  }
+
+  function showApp() {
+    loginView.style.display = "none";
+    appView.style.display = "block";
+    loadData();
+  }
+
+  loginBtn.addEventListener("click", login);
+  logoutBtn.addEventListener("click", logout);
+
+  // auto-resume if a session is already stored from this browser tab
+  if (sessionStorage.getItem(STORAGE_KEY_SESSION)) {
+    showApp();
+  }
+</script>
 </body>
 </html>
