@@ -189,6 +189,9 @@
   .tx .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .tx .chips span { background: #fff; border-radius: 10px; padding: 4px 10px; font-size: 12px; color: var(--sub); }
 
+  .copybtn { border: 0; border-radius: 16px; background: var(--chip); color: var(--chip-fg); font-size: 13px; font-weight: 700; padding: 8px 14px; margin: 8px 8px 0 0; }
+  .toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #1B1B21; color: #fff; padding: 12px 20px; border-radius: 16px; font-size: 14px; z-index: 50; max-width: 90%; text-align: center; }
+
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
   nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
@@ -336,10 +339,24 @@
     parent.appendChild(el("div", "err", err && err.message ? err.message : String(err)));
     if (raw) rawBox(parent, raw);
   }
+  function toast(msg) {
+    const t = el("div", "toast", msg); document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2200);
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); toast("Скопійовано ✓"); return; } catch {}
+    try {
+      const ta = document.createElement("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Скопійовано ✓");
+    } catch { toast("Не вдалося скопіювати"); }
+  }
   function rawBox(parent, data) {
     const d = el("details", "rawd");
     d.appendChild(el("summary", null, "Сирі дані (для налагодження)"));
-    d.appendChild(el("pre", null, JSON.stringify(data, null, 1).slice(0, 6000)));
+    const full = JSON.stringify(data, null, 1);
+    const cb = el("button", "copybtn", "Копіювати все"); cb.onclick = () => copyText(full);
+    d.appendChild(cb);
+    d.appendChild(el("pre", null, full.slice(0, 6000)));
     parent.appendChild(d);
   }
 
@@ -938,6 +955,22 @@
     item(ICON.book, "Підручники", open("/"), true);
     item(ICON.help, "Часті запитання", open("/"));
     page.appendChild(list);
+    const dbg = el("button", "mi");
+    const dic = el("span", "ic"); dic.appendChild(svg(ICON.info));
+    dbg.append(dic, el("span", "t", "Скопіювати всі дані для розробника"));
+    dbg.onclick = async () => {
+      toast("Збираю дані…");
+      const bundle = { app: "v8", profile: S.profile, studentId: S.studentId, weekMode: S.weekMode, weeks: {} };
+      for (const [k, v] of S.weeks) bundle.weeks[new Date(k).toISOString().slice(0, 10)] = v;
+      const grab = async (name, path) => { try { bundle[name] = await api(path); } catch (e) { bundle[name] = { error: String(e.message).slice(0, 500) }; } };
+      try { await getWeek(Date.now()); bundle.weeks = Object.fromEntries([...S.weeks].map(([k, v]) => [new Date(k).toISOString().slice(0, 10), v])); } catch {}
+      if (S.profile && S.profile.class_id) await grab("schoolSchedule", `/api?path=${encodeURIComponent("/schedule/class/get/" + S.profile.class_id)}`);
+      const now = new Date(); const to = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      await grab("canteen", `/api?path=${encodeURIComponent(`/canteen/get/${S.studentId}/${iso(new Date(to - 60 * DAY))}/${iso(new Date(to))}`)}`);
+      await grab("feed", "/feed?page=1");
+      copyText(JSON.stringify(bundle, null, 1));
+    };
+    list.appendChild(dbg);
     const out = el("button", "mi out"); const ic = el("span", "ic"); ic.appendChild(svg(ICON.out));
     out.append(ic, el("span", "t", "Вихід")); out.onclick = logout; page.appendChild(out);
   }
