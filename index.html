@@ -2,342 +2,297 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Щоденник — прототип</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Щоденник</title>
+<meta name="theme-color" content="#FBF8FF">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400..800&display=swap&subset=cyrillic,cyrillic-ext,latin" rel="stylesheet">
 <style>
   :root {
-    --ink: #1c1f26;
-    --paper: #fafaf8;
-    --line: #dcdad4;
-    --accent: #2f5d50;
-    --accent-soft: #e4ede9;
-    --muted: #6b6f76;
-    --grade-low: #b5493a;
-    --grade-mid: #b8862f;
-    --grade-high: #2f5d50;
+    --bg: #FBF8FF; --ink: #1B1B21; --sub: #46464F; --primary: #4355B9;
+    --surf: #EEEDF4; --surf2: #E8E7EF; --nav: #F4F2FA;
+    --chip: #DDE1FF; --chip-fg: #00164E;
+    --pink: #FFD8EC; --pink-fg: #2E1126;
+    --green: #BFEBDC; --green-fg: #00201A;
+    --red: #FFDAD6; --red-fg: #410002;
+    --yellow: #FFE18E; --yellow-fg: #241A00;
+    --outline: #777680;
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--paper);
-    color: var(--ink);
-    padding: 24px 16px 80px;
-  }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0 0 4px;
-    letter-spacing: -0.01em;
-  }
-  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Roboto Flex', Roboto, system-ui, sans-serif; }
+  button { font-family: inherit; cursor: pointer; }
+  a { text-decoration: none; color: inherit; }
+  svg { display: block; }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .hidden { display: none !important; }
 
-  .card {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 16px;
-  }
+  /* header */
+  .hdr { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 8px 24px; gap: 8px; }
+  .hdr h1 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 800; letter-spacing: -0.5px; }
+  .hdr h1.long { font-size: 26px; line-height: 32px; }
+  .hdr .acts { display: flex; align-items: center; gap: 4px; }
+  .ibtn { position: relative; width: 48px; height: 48px; border-radius: 24px; border: 0; background: none; color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 0; }
+  .ibtn.sq { width: 44px; height: 44px; border-radius: 16px; background: var(--surf2); }
+  .ibtn .dot { position: absolute; top: 10px; right: 11px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); border: 2px solid var(--bg); }
+  .lang { width: 52px; height: 44px; border-radius: 22px; border: 0; background: var(--primary); color: #fff; font-size: 15px; font-weight: 700; padding: 0; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0 24px; }
+  .who .nm { min-width: 0; font-size: 17px; line-height: 22px; font-weight: 600; text-wrap: balance; }
+  .page { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 12px; }
 
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; margin-top: 14px; }
-  label:first-child { margin-top: 0; }
-  input[type="email"], input[type="password"], input[type="text"] {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    font-size: 15px;
-    background: var(--paper);
-  }
-  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* week / month switcher */
+  .switch { display: flex; gap: 4px; padding: 12px 16px 0; }
+  .switch button { border: 0; height: 52px; color: var(--ink); background: var(--surf2); display: flex; align-items: center; justify-content: center; padding: 0; }
+  .switch .prev { width: 60px; border-radius: 26px 8px 8px 26px; }
+  .switch .next { width: 60px; border-radius: 8px 26px 26px 8px; }
+  .switch .mid { flex: 1; border-radius: 8px; background: var(--chip); color: var(--chip-fg); font-size: 16px; font-weight: 700; }
 
-  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
-  .checkbox-row label { margin: 0; font-size: 14px; color: var(--ink); }
+  /* segmented */
+  .seg { display: flex; gap: 4px; padding: 12px 16px 0; }
+  .seg button { flex: 1; height: 48px; border: 0; font-size: 15px; font-weight: 600; background: var(--surf2); color: var(--ink); }
+  .seg button:first-child { border-radius: 24px 8px 8px 24px; }
+  .seg button:last-child { border-radius: 8px 24px 24px 8px; }
+  .seg button.on { background: var(--primary); color: #fff; }
 
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 11px 18px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 18px;
-    width: 100%;
-  }
-  button:disabled { opacity: 0.5; cursor: default; }
-  button:hover:not(:disabled) { filter: brightness(0.95); }
+  /* day header */
+  .dayh { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 0 12px; }
+  .dayh .dn { font-size: 24px; line-height: 30px; font-weight: 700; }
+  .dayh .dd { font-size: 14px; line-height: 20px; color: var(--sub); }
+  .mood { width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: var(--green); color: var(--green-fg); }
+  .mood.mid { background: var(--yellow); color: var(--yellow-fg); }
+  .mood.low { background: var(--red); color: var(--red-fg); }
 
-  .status { white-space: pre-wrap; word-break: break-all; font-size: 13px; margin-top: 10px; min-height: 18px; }
-  .status.error { color: var(--grade-low); }
-  .status.ok { color: var(--accent); }
+  /* lessons */
+  .list { display: flex; flex-direction: column; gap: 2px; }
+  .les { display: flex; gap: 12px; padding: 14px 6px 14px 14px; background: var(--surf); color: var(--ink); border-radius: 8px; }
+  .les:first-child { border-radius: 28px 28px 8px 8px; }
+  .les:last-child { border-radius: 8px 8px 28px 28px; }
+  .les:only-child { border-radius: 28px; }
+  .les.cur { background: var(--primary); color: #fff; }
+  .badge { flex: none; width: 44px; height: 44px; border-radius: 16px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+  .les.cur .badge { background: #fff; color: var(--primary); }
+  .lbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+  .lsub { font-size: 17px; line-height: 22px; font-weight: 600; overflow-wrap: anywhere; }
+  .lmeta { font-size: 13px; line-height: 18px; color: var(--sub); }
+  .les.cur .lmeta { color: #E1E4FF; }
+  .gr { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; }
+  .chipg { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 12px; background: var(--chip); color: var(--chip-fg); font-size: 13px; font-weight: 500; }
+  .chipg b { font-size: 16px; font-weight: 800; }
+  .chipg.a { background: var(--pink); color: var(--pink-fg); }
+  .chipg.t { background: var(--green); color: var(--green-fg); }
+  .chipg.n { background: var(--red); color: var(--red-fg); }
+  .expand { flex: none; align-self: flex-start; width: 44px; height: 44px; border-radius: 22px; border: 0; background: none; color: inherit; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .expand svg { transition: transform .2s; }
+  .les.open .expand svg { transform: rotate(180deg); }
+  .panel { display: none; margin-top: 12px; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--bg); color: var(--ink); }
+  .les.cur .panel { background: rgba(255,255,255,.16); color: #fff; }
+  .les.open .panel { display: flex; }
+  .panel .k { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--sub); }
+  .les.cur .panel .k { color: #E1E4FF; }
+  .panel .v { font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
 
-  #app-view { display: none; }
+  /* schedule */
+  .days { display: flex; gap: 8px; padding: 12px 16px 0; }
+  .dpill { flex: 1; border: 0; border-radius: 20px; background: var(--surf2); color: var(--ink); padding: 8px 0; display: flex; flex-direction: column; align-items: center; font-size: 13px; font-weight: 500; }
+  .dpill b { font-size: 20px; font-weight: 700; }
+  .dpill.on { background: var(--primary); color: #fff; }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--surf); border-radius: 8px; }
+  .srow:first-child { border-radius: 28px 28px 8px 8px; }
+  .srow:last-child { border-radius: 8px 8px 28px 28px; }
+  .srow:only-child { border-radius: 28px; }
+  .srow .tm { flex: none; text-align: right; font-size: 14px; line-height: 20px; font-weight: 500; }
+  .break { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-radius: 24px; background: var(--yellow); color: var(--yellow-fg); font-size: 16px; font-weight: 700; margin: 8px 0; }
+  .sblock { border-radius: 24px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .sblock .th { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
+  .sblock .th .badge { width: 32px; height: 32px; border-radius: 10px; font-size: 15px; background: rgba(255,255,255,.7); color: inherit; }
+  .sblock .it .s { font-size: 17px; font-weight: 500; }
+  .sblock .it .m { font-size: 13px; opacity: .8; }
+  .c0 { background: var(--green); color: var(--green-fg); }
+  .c1 { background: var(--chip); color: var(--chip-fg); }
+  .c2 { background: var(--pink); color: var(--pink-fg); }
+  .c3 { background: var(--yellow); color: var(--yellow-fg); }
 
-  .day-block { margin-bottom: 22px; }
-  .day-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
-  .lesson-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line);
-    gap: 12px;
-  }
-  .lesson-row:last-child { border-bottom: none; }
-  .lesson-name { font-size: 14px; }
-  .lesson-comment { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .grades { display: flex; gap: 6px; flex-shrink: 0; }
-  .grade-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 6px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 700;
-    color: white;
-  }
+  /* grades */
+  .card { background: var(--surf); border-radius: 28px; padding: 16px; }
+  .card h3 { margin: 4px 4px 12px; font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+  .card h3 small { font-size: 13px; font-weight: 600; color: var(--sub); align-self: center; white-space: nowrap; }
+  .gtiles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .gt { min-width: 64px; padding: 10px 12px; border-radius: 16px; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .gt b { font-size: 24px; line-height: 28px; font-weight: 800; }
+  .gt span { font-size: 13px; color: var(--sub); }
+  .gt.a { background: var(--pink); } .gt.t { background: var(--green); } .gt.n { background: var(--red); }
 
-  .feed-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .feed-item:last-child { border-bottom: none; }
-  .feed-time { font-size: 12px; color: var(--muted); }
-  .feed-title { font-size: 14px; margin-top: 2px; }
-  .feed-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .feed-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .grade-pill.absent { background: #9a9fa8 !important; font-weight: 600; }
+  /* canteen */
+  .bal { background: var(--primary); color: #fff; border-radius: 32px; padding: 20px 24px 24px; }
+  .bal .l { font-size: 14px; opacity: .8; }
+  .bal .n { font-size: 44px; line-height: 52px; font-weight: 800; margin-top: 6px; }
+  .bal .n small { font-size: 22px; font-weight: 600; }
+  .two { display: flex; gap: 12px; }
+  .two > div { flex: 1; border-radius: 24px; padding: 16px; }
+  .two .l { font-size: 14px; font-weight: 500; }
+  .two .n { font-size: 20px; font-weight: 800; margin-top: 4px; }
+  .filters { background: var(--surf); border-radius: 28px; padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .filters h3 { margin: 0; font-size: 18px; }
+  .frow { display: flex; gap: 12px; }
+  .frow label { flex: 1; min-width: 0; font-size: 12px; color: var(--sub); display: flex; flex-direction: column; gap: 4px; }
+  .filters > label { font-size: 12px; color: var(--sub); display: flex; flex-direction: column; gap: 4px; }
+  .filters select { height: 52px; border: 1px solid var(--outline); border-radius: 14px; padding: 0 14px; font-size: 16px; background: transparent; color: var(--ink); font-family: inherit; width: 100%; }
+  .frow input, .frow select { height: 52px; border: 1px solid var(--outline); border-radius: 14px; padding: 0 14px; font-size: 16px; background: transparent; color: var(--ink); font-family: inherit; min-width: 0; width: 100%; }
+  .tx { background: var(--surf); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .tx:first-of-type { border-radius: 28px 28px 8px 8px; }
+  .tx:last-of-type { border-radius: 8px 8px 28px 28px; }
+  .tx .top { display: flex; align-items: center; gap: 12px; }
+  .tx .ic { width: 48px; height: 48px; border-radius: 16px; background: var(--yellow); color: var(--yellow-fg); display: flex; align-items: center; justify-content: center; flex: none; }
+  .tx .ic.in { background: var(--green); color: var(--green-fg); }
+  .tx .tt { flex: 1; }
+  .tx .tt b { display: block; font-size: 17px; }
+  .tx .tt span { font-size: 13px; color: var(--sub); }
+  .tx .am { font-size: 20px; font-weight: 800; }
+  .tx .line { background: #fff; border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 
-  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 24px 0 10px; }
-  .logout-link { font-size: 13px; color: var(--muted); text-decoration: underline; cursor: pointer; }
-  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  /* more */
+  .me { background: var(--chip); border-radius: 28px; padding: 16px; display: flex; align-items: center; gap: 16px; color: var(--chip-fg); }
+  .me .av { width: 64px; height: 64px; border-radius: 20px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; flex: none; }
+  .me b { font-size: 20px; line-height: 26px; display: block; }
+  .mi { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: var(--surf); border: 0; width: 100%; text-align: left; font-size: 16px; font-weight: 600; color: var(--ink); border-radius: 8px; }
+  .mi:first-child { border-radius: 28px 28px 8px 8px; }
+  .mi:last-child { border-radius: 8px 8px 28px 28px; }
+  .mi .ic { width: 48px; height: 48px; border-radius: 16px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; flex: none; }
+  .mi .t { flex: 1; }
+  .mi.out { background: var(--red); color: var(--red-fg); border-radius: 28px; margin-top: 8px; }
+  .mi.out .ic { background: rgba(255,255,255,.6); color: var(--red-fg); }
 
-  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-  .tab { flex: 1; text-align: center; padding: 9px 0; border: 1px solid var(--line); border-radius: 8px; background: white; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted); }
-  .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
-  .weeknav { display: flex; align-items: stretch; gap: 8px; margin-bottom: 14px; }
-  .weeknav button { margin: 0; width: 44px; padding: 0; font-size: 18px; }
-  .weeknav .week-label { flex: 1; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; font-weight: 600; }
-  .today-btn { margin: 0 0 14px; background: white; color: var(--accent); border: 1px solid var(--line); padding: 8px; font-size: 13px; }
-  .day { background: white; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
-  .day-head { padding: 12px 16px; background: var(--accent-soft); display: flex; justify-content: space-between; align-items: baseline; }
-  .day-head .dn { font-weight: 700; font-size: 15px; }
-  .day-head .dd { font-size: 13px; color: var(--muted); }
-  .day-empty { padding: 14px 16px; font-size: 13px; color: var(--muted); }
-  .lesson { border-top: 1px solid var(--line); padding: 10px 16px; cursor: pointer; }
-  .lesson:first-of-type { border-top: none; }
-  .l-row { display: flex; gap: 12px; align-items: flex-start; }
-  .l-num { width: 20px; flex-shrink: 0; font-weight: 700; color: var(--muted); font-size: 14px; padding-top: 1px; }
-  .l-main { flex: 1; min-width: 0; }
-  .l-subject { font-size: 15px; font-weight: 600; }
-  .l-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .l-grades { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; max-width: 40%; }
-  .g-item { display: flex; align-items: center; gap: 6px; }
-  .g-type { font-size: 11px; color: var(--muted); text-align: right; }
-  .hw-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #fff3d6; color: #8a5b00; margin-left: 6px; vertical-align: middle; }
-  .l-detail { display: none; margin: 8px 0 2px 32px; font-size: 13px; line-height: 1.45; }
-  .lesson.open .l-detail { display: block; }
-  .l-detail b { font-weight: 700; }
-  .l-detail .blk { margin-top: 6px; white-space: pre-wrap; word-break: break-word; }
-  .hw-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .hw-item:last-child { border-bottom: none; }
-  .hw-subj { font-size: 14px; font-weight: 600; }
-  .hw-text { font-size: 13px; margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
-  .hw-date { font-size: 12px; color: var(--muted); }
-  .more-btn { background: white; color: var(--accent); border: 1px solid var(--line); }
-  .debug-link { font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; display: inline-block; margin: 6px 0 24px; }
-  pre.raw { background: #f2f1ec; padding: 10px; border-radius: 6px; font-size: 11px; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow: auto; }
+  /* feed */
+  .fi { background: var(--surf); border-radius: 8px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .fi:first-of-type { border-radius: 28px 28px 8px 8px; }
+  .fi:last-of-type { border-radius: 8px 8px 28px 28px; }
+  .fi .b { flex: 1; min-width: 0; }
+  .fi .tm { font-size: 12px; color: var(--sub); }
+  .fi .tt { font-size: 16px; font-weight: 600; margin-top: 2px; }
+  .fi .ds { font-size: 13px; color: var(--sub); margin-top: 2px; overflow-wrap: anywhere; }
+  .moreb { height: 48px; border: 0; border-radius: 24px; background: var(--chip); color: var(--chip-fg); font-size: 15px; font-weight: 700; }
+
+  /* bottom nav */
+  nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
+  nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
+  nav.bn button { flex: 1; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--sub); font-size: 12px; line-height: 16px; font-weight: 500; padding: 0; }
+  nav.bn button .pill { width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+  nav.bn button.on { color: var(--ink); font-weight: 700; }
+  nav.bn button.on .pill { background: var(--chip); color: var(--chip-fg); }
+
+  /* states */
+  .msg { padding: 24px 16px; text-align: center; color: var(--sub); font-size: 14px; }
+  .err { margin: 12px 16px; padding: 14px; border-radius: 16px; background: var(--red); color: var(--red-fg); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .spin { margin: 40px auto; width: 32px; height: 32px; border-radius: 50%; border: 4px solid var(--chip); border-top-color: var(--primary); animation: sp .8s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  details.rawd { margin: 8px 16px; font-size: 12px; color: var(--sub); }
+  details.rawd pre { background: var(--surf); padding: 10px; border-radius: 12px; white-space: pre-wrap; word-break: break-all; max-height: 260px; overflow: auto; }
+
+  /* login */
+  .login { max-width: 420px; margin: 0 auto; padding: 56px 24px 24px; }
+  .login h1 { font-size: 40px; font-weight: 800; letter-spacing: -.5px; margin: 0 0 4px; }
+  .login p { margin: 0 0 28px; color: var(--sub); }
+  .login label.f { display: block; font-size: 12px; color: var(--sub); margin: 14px 0 4px 4px; }
+  .login input[type=email], .login input[type=password], .login input[type=text] { width: 100%; height: 56px; border: 1px solid var(--outline); border-radius: 16px; padding: 0 16px; font-size: 16px; background: transparent; color: var(--ink); font-family: inherit; }
+  .login input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  .login .rem { display: flex; gap: 10px; align-items: center; margin: 16px 4px; font-size: 15px; }
+  .login .go { width: 100%; height: 56px; border: 0; border-radius: 28px; background: var(--primary); color: #fff; font-size: 17px; font-weight: 700; }
+  .login .go:disabled { opacity: .5; }
+  .login .st { margin-top: 14px; font-size: 13px; white-space: pre-wrap; word-break: break-all; min-height: 18px; }
+  .login .st.error { color: #BA1A1A; }
+  .login details { margin-top: 18px; font-size: 13px; color: var(--sub); }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div id="login-view">
-    <h1>Щоденник</h1>
-    <div class="subtitle">Щоденник оцінок</div>
-    <div class="card">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="you@example.com">
-
-      <label for="password">Пароль</label>
-      <input type="password" id="password">
-
-      <div class="checkbox-row">
-        <input type="checkbox" id="remember" checked>
-        <label for="remember">Запам'ятати мене</label>
-      </div>
-
-      <details style="margin-top:14px;font-size:13px;color:var(--muted)">
-        <summary>Налаштування сервера</summary>
-        <label for="worker-url">Worker URL</label>
-        <input type="text" id="worker-url" placeholder="https://school-proxy.xxx.workers.dev">
-      </details>
-
-      <button id="login-btn">Увійти</button>
-      <div class="status" id="login-status"></div>
-    </div>
-  </div>
-
-  <div id="app-view">
-    <div class="top-bar">
-      <h1 id="student-name">Щоденник</h1>
-      <span class="logout-link" id="logout-btn">Вийти</span>
-    </div>
-
-    <div class="tabs">
-      <div class="tab active" data-tab="diary">Щоденник</div>
-      <div class="tab" data-tab="homework">Домашні</div>
-      <div class="tab" data-tab="feed">Стрічка</div>
-    </div>
-
-    <div id="tab-diary">
-      <div class="weeknav">
-        <button id="prev-week" aria-label="Попередній тиждень">‹</button>
-        <div class="week-label" id="week-label">…</div>
-        <button id="next-week" aria-label="Наступний тиждень">›</button>
-      </div>
-      <button class="today-btn" id="today-btn">Поточний тиждень</button>
-      <div id="daybook-container"><div class="status">Завантаження...</div></div>
-      <span class="debug-link" id="debug-link">Показати сирі дані (для налагодження)</span>
-      <pre class="raw" id="raw" style="display:none"></pre>
-    </div>
-
-    <div id="tab-homework" style="display:none">
-      <div class="section-title" style="margin-top:0">Домашнє завдання на цьому тижні</div>
-      <div class="card" id="homework-container"></div>
-    </div>
-
-    <div id="tab-feed" style="display:none">
-      <div class="card" id="feed-container"><div class="status">Завантаження...</div></div>
-      <button class="more-btn" id="feed-more" style="display:none">Показати ще</button>
-    </div>
-  </div>
-
+<!-- ============ LOGIN ============ -->
+<div id="login-view" class="login">
+  <h1>Щоденник</h1>
+  <p>Увійдіть у школу</p>
+  <label class="f" for="email">Email</label>
+  <input type="email" id="email" autocomplete="username" placeholder="you@example.com">
+  <label class="f" for="password">Пароль</label>
+  <input type="password" id="password" autocomplete="current-password">
+  <label class="rem"><input type="checkbox" id="remember" checked> Запам'ятати мене</label>
+  <button class="go" id="login-btn">Увійти</button>
+  <div class="st" id="login-status"></div>
+  <details>
+    <summary>Налаштування сервера</summary>
+    <label class="f" for="worker-url">Worker URL</label>
+    <input type="text" id="worker-url" placeholder="https://school-proxy.xxx.workers.dev">
+  </details>
 </div>
 
+<!-- ============ APP ============ -->
+<div id="app-view" class="app hidden">
+  <header class="hdr">
+    <h1 id="title">Щоденник</h1>
+    <div class="acts">
+      <button class="ibtn" id="bell" aria-label="Сповіщення"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/></svg><span class="dot"></span></button>
+      <button class="ibtn sq" id="moodbtn" aria-label="Настрій"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 16a4.5 4.5 0 0 1 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+      <button class="lang" aria-label="Мова: українська">UK</button>
+    </div>
+  </header>
+  <main id="screen"></main>
+</div>
+
+<nav class="bn hidden" id="bn"><div class="in">
+  <button data-s="diary"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M9 9h6M9 13h4"/></svg></span>Щоденник</button>
+  <button data-s="schedule"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Розклад</button>
+  <button data-s="grades"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-7M12 20V5M19 20V10"/></svg></span>Успішність</button>
+  <button data-s="canteen"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 21V3c-2.5 1.5-3.5 4-3.5 8H17"/></svg></span>Їдальня</button>
+  <button data-s="more"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="2"/><rect x="14" y="4" width="6" height="6" rx="2"/><rect x="4" y="14" width="6" height="6" rx="2"/><rect x="14" y="14" width="6" height="6" rx="2"/></svg></span>Ще</button>
+</div></nav>
+
 <script>
-  // ---- config ----
-  // Default Worker URL; can be overridden in-app (saved in localStorage) so no code edit is needed.
+(() => {
+  // ================= config / storage =================
   const DEFAULT_WORKER_URL = "https://school-proxy.marksmurfik-d59.workers.dev";
+  const SCHOOL = "https://school.academy.com.ua";
+  const K_SESSION = "school_session_cookie";
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
   let WORKER_URL = (lsGet("school_worker_url") || DEFAULT_WORKER_URL).replace(/\/+$/, "");
-  const STORAGE_KEY_SESSION = "school_session_cookie";
-  let STUDENT_ID = lsGet("school_student_id");
+  const getSession = () => { try { return localStorage.getItem(K_SESSION) || sessionStorage.getItem(K_SESSION); } catch { return null; } };
+  const clearSession = () => { try { localStorage.removeItem(K_SESSION); sessionStorage.removeItem(K_SESSION); } catch {} };
+  const setSession = (v, persist) => { try { clearSession(); (persist ? localStorage : sessionStorage).setItem(K_SESSION, v); } catch {} };
 
-  const loginView = document.getElementById("login-view");
-  const appView = document.getElementById("app-view");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const rememberInput = document.getElementById("remember");
-  const loginBtn = document.getElementById("login-btn");
-  const loginStatus = document.getElementById("login-status");
-  const logoutBtn = document.getElementById("logout-btn");
+  const $ = (id) => document.getElementById(id);
+  const DAY = 86400000;
+  const ICON = {
+    chev: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    left: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+    right: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+    more: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>',
+    smile: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg>',
+    neutral: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 15h6"/><path d="M9 9.5h.01M15 9.5h.01"/></svg>',
+    sad: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 16a4.5 4.5 0 0 1 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg>',
+    mail: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>',
+    info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+    people: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21 20v-1a5 5 0 0 0-3-4.6"/></svg>',
+    book: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>',
+    help: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg>',
+    out: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg>',
+    dish: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M5 18a7 7 0 0 1 14 0M12 8V6M10 6h4"/></svg>',
+    plus: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    group: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/></svg>',
+  };
 
-  const workerInput = document.getElementById("worker-url");
-  workerInput.value = WORKER_URL.includes("REPLACE-ME") ? "" : WORKER_URL;
-  workerInput.addEventListener("change", () => {
-    const v = workerInput.value.trim().replace(/\/+$/, "");
-    if (v) { WORKER_URL = v; lsSet("school_worker_url", v); }
-  });
+  // Bell schedule from the design (used when the data has no times)
+  const BELLS = { 1: "09:00 – 09:45", 2: "10:00 – 10:45", 3: "10:55 – 11:40", 4: "11:50 – 12:35", 5: "13:30 – 14:15", 6: "14:25 – 15:10", 7: "15:20 – 16:05", 8: "16:15 – 17:00", 9: "17:00 – 17:40" };
 
-  function getSession() {
-    try { return localStorage.getItem(STORAGE_KEY_SESSION) || sessionStorage.getItem(STORAGE_KEY_SESSION); } catch { return null; }
+  // ================= tiny DOM helpers =================
+  function el(tag, cls, content) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (content != null) { if (content instanceof Node) e.appendChild(content); else e.textContent = content; }
+    return e;
   }
-  function setSession(v, persist) {
-    try {
-      clearSession();
-      (persist ? localStorage : sessionStorage).setItem(STORAGE_KEY_SESSION, v);
-    } catch {}
-  }
-  function clearSession() {
-    try { localStorage.removeItem(STORAGE_KEY_SESSION); sessionStorage.removeItem(STORAGE_KEY_SESSION); } catch {}
-  }
-
-  function setStatus(msg, isError) {
-    loginStatus.textContent = msg;
-    loginStatus.className = "status " + (isError ? "error" : "ok");
-  }
-
-  function gradeColor(value) {
-    const n = parseInt(value, 10);
-    if (isNaN(n)) return "var(--muted)";
-    if (n <= 4) return "var(--grade-low)";
-    if (n <= 7) return "var(--grade-mid)";
-    return "var(--grade-high)";
-  }
-
-  async function login() {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-
-    if (!email || !password) {
-      setStatus("Заповніть усі поля.", true);
-      return;
-    }
-
-    const typed = workerInput.value.trim().replace(/\/+$/, "");
-    if (typed) { WORKER_URL = typed; lsSet("school_worker_url", typed); }
-    if (WORKER_URL.includes("REPLACE-ME")) {
-      setStatus("Вкажіть Worker URL у налаштуваннях сервера.", true);
-      return;
-    }
-
-    loginBtn.disabled = true;
-    setStatus("Вхід...", false);
-
-    try {
-      const resp = await fetch(`${WORKER_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember: rememberInput.checked }),
-      });
-      const data = await resp.json();
-
-      if (!resp.ok || !data.success) {
-        setStatus((data.error || "Помилка входу.") + (data.debug_status ? "\n" + JSON.stringify(data, null, 1) : ""), true);
-        loginBtn.disabled = false;
-        return;
-      }
-
-      setSession(data.session_cookie, rememberInput.checked);
-      showApp();
-    } catch (err) {
-      setStatus("Не вдалося з'єднатися з сервером: " + err.message, true);
-      loginBtn.disabled = false;
-    }
-  }
-
-  function logout() {
-    clearSession();
-    STUDENT_ID = null;
-    lsSet("school_student_id", "");
-    appView.style.display = "none";
-    loginView.style.display = "block";
-    loginBtn.disabled = false;
-    setStatus("", false);
-  }
-
-  async function proxiedFetch(path, withHeaders) {
-    const sessionCookie = getSession();
-    const resp = await fetch(`${WORKER_URL}${path}`, {
-      headers: { "X-Session-Cookie": sessionCookie || "" },
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      throw new Error(JSON.stringify(data, null, 2));
-    }
-    return withHeaders ? { data, headers: resp.headers } : data;
-  }
-
-  // ---------- helpers ----------
-  const DAY_MS = 86400000;
-  const pick = (o, keys) => { for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k]; return null; };
+  const svg = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
   const plain = (h) => new DOMParser().parseFromString(String(h == null ? "" : h), "text/html").body.textContent.trim();
+  const pick = (o, keys) => { for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k]; return null; };
   function textOf(v) {
     if (v == null) return "";
     if (typeof v === "string") return plain(v);
@@ -345,242 +300,597 @@
     if (typeof v === "object") return textOf(pick(v, ["text", "description", "body", "value", "title", "name"]) ?? "");
     return String(v);
   }
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
-  function showErr(id, msg) {
-    const c = document.getElementById(id);
-    c.innerHTML = "";
-    const pre = el("pre", "status error", msg);
-    pre.style.cssText = "white-space:pre-wrap;font-size:11px;";
-    c.appendChild(pre);
-  }
-  function gradePill(value) {
-    const pill = el("span", "grade-pill", value);
-    const absent = /^н$/i.test(String(value).trim());
-    pill.style.background = gradeColor(value);
-    if (absent) { pill.classList.add("absent"); pill.title = "Відсутній"; }
-    return pill;
-  }
-
-  // ---------- diary ----------
-  let anchor = Date.now();          // any moment inside the week being viewed
-  let weekMode = null;              // which week format the school accepted
-  let lastWeekJson = null;
-  let weekDays = [];
-
-  function fmtShort(d) {
-    return d.toLocaleDateString("uk-UA", { day: "numeric", month: "long" });
-  }
-  function parseDate(str) {          // "05.11.2026"
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmtShort = (d) => d.toLocaleDateString("uk-UA", { day: "numeric", month: "long", timeZone: "UTC" });
+  function parseDate(str) {
     const m = String(str || "").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
     return m ? new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])) : null;
   }
+  function mondayOf(ms) {
+    const d = new Date(ms); const t = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    const dow = (new Date(t).getUTCDay() + 6) % 7;
+    return t - dow * DAY;
+  }
+  const initial = () => Date.now();
 
-  function lessonNumber(l, i) { return pick(l, ["lesson_number", "lesson_num", "number", "num", "order", "position"]) ?? i + 1; }
-  function lessonTime(l) {
+  function loading() { const s = $("screen"); s.innerHTML = ""; s.appendChild(el("div", "spin")); }
+  function errorBox(parent, err, raw) {
+    parent.appendChild(el("div", "err", err && err.message ? err.message : String(err)));
+    if (raw) rawBox(parent, raw);
+  }
+  function rawBox(parent, data) {
+    const d = el("details", "rawd");
+    d.appendChild(el("summary", null, "Сирі дані (для налагодження)"));
+    d.appendChild(el("pre", null, JSON.stringify(data, null, 1).slice(0, 6000)));
+    parent.appendChild(d);
+  }
+
+  // ================= api =================
+  async function api(path, withHeaders) {
+    const resp = await fetch(`${WORKER_URL}${path}`, { headers: { "X-Session-Cookie": getSession() || "" } });
+    let data = null;
+    try { data = await resp.json(); } catch {}
+    if (!resp.ok) {
+      const e = new Error(JSON.stringify(data, null, 2));
+      e.status = resp.status;
+      throw e;
+    }
+    return withHeaders ? { data, headers: resp.headers } : data;
+  }
+
+  // ================= state =================
+  const S = {
+    studentId: lsGet("school_student_id") || null,
+    profile: null,           // from /discover
+    screen: "diary",
+    weekAnchor: initial(),   // ms inside displayed week
+    weekMode: null,
+    weeks: new Map(),        // mondayMs -> daybook json
+    schedTab: "my", schedDay: null,
+    monthAnchor: Date.UTC(new Date().getFullYear(), new Date().getMonth(), 1),
+    feedPage: 1,
+    from: null, to: null, ctype: "all",
+  };
+
+  async function ensureProfile() {
+    if (S.profile && S.studentId) return;
+    const { data: d } = await api("/discover", true);
+    if (!d.current_student_id) throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
+    S.profile = d;
+    S.studentId = d.current_student_id;
+    lsSet("school_student_id", S.studentId);
+  }
+
+  async function getWeek(anchorMs, force) {
+    const key = mondayOf(anchorMs);
+    if (!force && S.weeks.has(key)) return S.weeks.get(key);
+    const q = `/daybook?student_id=${S.studentId}&date=${key + 3 * DAY}` + (S.weekMode ? `&mode=${S.weekMode}` : "");
+    const { data, headers } = await api(q, true);
+    const m = headers.get("X-Week-Mode");
+    if (m && m !== "explicit") S.weekMode = m;
+    S.weeks.set(key, data);
+    return data;
+  }
+  const daysOf = (json) => (json && json.data && json.data.week_days) || (json && json.week_days) || [];
+
+  // ================= lesson helpers =================
+  const lessonNum = (l, i) => pick(l, ["lesson_number", "lesson_num", "number", "num", "order", "position"]) ?? i + 1;
+  function lessonTime(l, n) {
     const t = pick(l, ["time", "time_formatted", "period"]);
-    if (t) return textOf(t);
+    if (t) return textOf(t).replace(/\s*-\s*/, " – ");
     const a = pick(l, ["start_time", "time_start", "begin", "start", "from"]);
     const b = pick(l, ["end_time", "time_end", "end", "finish", "to"]);
-    return a && b ? `${a} – ${b}` : a || "";
+    if (a && b) return `${a} – ${b}`;
+    return BELLS[n] || "";
+  }
+  const lessonRoom = (l) => pick(l, ["room", "class_room", "classroom", "cabinet", "room_name"]);
+  const metaOf = (l) => [lessonRoom(l), l.teacher_name].filter(Boolean).join(" · ");
+  function gradeKind(g) {
+    const v = String(g.grade_value ?? "").trim();
+    const t = String(g.grade_type_name || "");
+    if (/^н$/i.test(v)) return "n";
+    if (/додатков/i.test(t)) return "a";
+    if (/тематич/i.test(t)) return "t";
+    return "p";
+  }
+  function gradeChip(g) {
+    const k = gradeKind(g);
+    const c = el("span", "chipg " + (k === "p" ? "" : k));
+    c.appendChild(el("b", null, g.grade_value));
+    const label = k === "n" ? "Відсутній" : (g.grade_type_name && !/поточ/i.test(g.grade_type_name) ? g.grade_type_name : "");
+    if (label) c.appendChild(el("span", null, label));
+    return c;
+  }
+  function nowIn(dayDate, time) {
+    const m = String(time).match(/(\d{1,2}):(\d{2})\D+(\d{1,2}):(\d{2})/);
+    if (!m || !dayDate) return false;
+    const now = new Date();
+    if (dayDate.getTime() !== Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) return false;
+    const cur = now.getHours() * 60 + now.getMinutes();
+    return cur >= +m[1] * 60 + +m[2] && cur < +m[3] * 60 + +m[4];
+  }
+  function moodOf(lessons) {
+    let abs = false; const nums = [];
+    for (const l of lessons) for (const g of l.grades || []) {
+      const v = parseFloat(g.grade_value);
+      if (!isNaN(v)) nums.push(v); else if (/^н$/i.test(String(g.grade_value).trim())) abs = true;
+    }
+    if (nums.length) {
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      if (avg >= 7) return "good"; if (avg >= 5) return "mid"; return "low";
+    }
+    return abs ? "mid" : "good";
+  }
+  function moodNode(m) {
+    const d = el("span", "mood" + (m === "mid" ? " mid" : m === "low" ? " low" : ""));
+    d.setAttribute("role", "img");
+    d.setAttribute("aria-label", "Настрій дня");
+    d.appendChild(svg(m === "good" ? ICON.smile : m === "mid" ? ICON.neutral : ICON.sad));
+    return d;
   }
 
-  function renderDaybook(json) {
-    lastWeekJson = json;
-    const container = document.getElementById("daybook-container");
-    weekDays = (json.data && json.data.week_days) || json.week_days || [];
-    container.innerHTML = "";
+  // ================= week switcher =================
+  function weekLabel(json, anchor) {
+    const dates = daysOf(json).map((d) => parseDate(d.date)).filter(Boolean);
+    if (dates.length) return `${fmtShort(dates[0])} – ${fmtShort(dates[dates.length - 1])}`;
+    const m = mondayOf(anchor);
+    return `${fmtShort(new Date(m))} – ${fmtShort(new Date(m + 6 * DAY))}`;
+  }
+  function switcher(label, onPrev, onNext) {
+    const w = el("div", "switch");
+    const p = el("button", "prev"); p.setAttribute("aria-label", "Назад"); p.appendChild(svg(ICON.left)); p.onclick = onPrev;
+    const mid = el("button", "mid", label);
+    const n = el("button", "next"); n.setAttribute("aria-label", "Вперед"); n.appendChild(svg(ICON.right)); n.onclick = onNext;
+    w.append(p, mid, n);
+    return w;
+  }
+  function whoRow() {
+    const r = el("div", "who");
+    r.appendChild(el("div", "nm", (S.profile && S.profile.student_name) || ""));
+    const b = el("button", "ibtn"); b.setAttribute("aria-label", "Ще дії"); b.appendChild(svg(ICON.more));
+    r.appendChild(b);
+    return r;
+  }
 
-    // header: real dates of the week we actually got
-    const dates = weekDays.map((d) => parseDate(d.date)).filter(Boolean);
-    document.getElementById("week-label").textContent = dates.length
-      ? `${fmtShort(dates[0])} – ${fmtShort(dates[dates.length - 1])}`
-      : "Тиждень";
-    if (dates.length) anchor = dates[0].getTime() + 3 * DAY_MS;
+  // ================= SCREEN: diary =================
+  async function diary() {
+    const root = $("screen"); root.innerHTML = "";
+    root.appendChild(whoRow());
+    const holder = el("div"); root.appendChild(holder);
+    holder.appendChild(el("div", "spin"));
+    let json;
+    try { json = await getWeek(S.weekAnchor); } catch (e) { holder.innerHTML = ""; return errorBox(holder, e); }
+    if (S.screen !== "diary") return;
+    const dates = daysOf(json).map((d) => parseDate(d.date)).filter(Boolean);
+    if (dates.length) S.weekAnchor = dates[0].getTime() + 3 * DAY;
+    holder.innerHTML = "";
+    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; diary(); }, () => { S.weekAnchor += 7 * DAY; diary(); }));
+    const page = el("div", "page"); holder.appendChild(page);
 
-    const name = pick(json.data || {}, ["student_name", "student", "user_name", "name"]);
-    if (typeof name === "string") document.getElementById("student-name").textContent = name;
-
-    if (!weekDays.length) {
-      container.innerHTML = '<div class="status">На цей тиждень даних немає.</div>';
-    }
-
-    for (const day of weekDays) {
-      const box = el("div", "day");
-      const head = el("div", "day-head");
-      head.appendChild(el("span", "dn", day.day_name || ""));
-      head.appendChild(el("span", "dd", day.date || ""));
-      box.appendChild(head);
-
+    const days = daysOf(json);
+    if (!days.length) page.appendChild(el("div", "msg", "На цей тиждень даних немає."));
+    for (const day of days) {
       const lessons = day.lessons || [];
-      if (!lessons.length) box.appendChild(el("div", "day-empty", "Уроків немає"));
-
-      lessons.forEach((l, i) => {
-        const row = el("div", "lesson");
-        const top = el("div", "l-row");
-        top.appendChild(el("div", "l-num", lessonNumber(l, i)));
-
-        const main = el("div", "l-main");
-        const subj = el("div", "l-subject", l.subject_name || "—");
-        const hw = textOf(l.homework);
-        if (hw) subj.appendChild(el("span", "hw-badge", "Д/з"));
-        main.appendChild(subj);
-        const meta = [lessonTime(l), pick(l, ["room", "class_room", "classroom", "cabinet"]), l.teacher_name].filter(Boolean).join(" · ");
-        if (meta) main.appendChild(el("div", "l-meta", meta));
-        top.appendChild(main);
-
-        const gradesBox = el("div", "l-grades");
-        for (const g of l.grades || []) {
-          const item = el("div", "g-item");
-          if (g.grade_type_name) item.appendChild(el("span", "g-type", g.grade_type_name));
-          item.appendChild(gradePill(g.grade_value));
-          gradesBox.appendChild(item);
+      const dd = parseDate(day.date);
+      const h = el("div", "dayh");
+      const l = el("div"); l.append(el("div", "dn", day.day_name || ""), el("div", "dd", dd ? `${dd.getUTCDate()} ${dd.toLocaleDateString("uk-UA", { month: "long", timeZone: "UTC" })} ${dd.getUTCFullYear()}` : (day.date || "")));
+      h.append(l, moodNode(moodOf(lessons)));
+      page.appendChild(h);
+      if (!lessons.length) { page.appendChild(el("div", "msg", "Уроків немає")); continue; }
+      const list = el("div", "list");
+      lessons.forEach((ls, i) => {
+        const n = lessonNum(ls, i);
+        const time = lessonTime(ls, n);
+        const cur = nowIn(dd, time);
+        const row = el("div", "les" + (cur ? " cur" : ""));
+        row.appendChild(el("div", "badge", n));
+        const body = el("div", "lbody");
+        body.appendChild(el("div", "lsub", ls.subject_name || "—"));
+        if (time) body.appendChild(el("div", "lmeta", time + (cur ? " · Зараз" : "")));
+        const meta = metaOf(ls); if (meta) body.appendChild(el("div", "lmeta", meta));
+        if ((ls.grades || []).length) {
+          const g = el("div", "gr"); ls.grades.forEach((x) => g.appendChild(gradeChip(x))); body.appendChild(g);
         }
-        top.appendChild(gradesBox);
-        row.appendChild(top);
-
-        const detail = el("div", "l-detail");
-        const topic = textOf(l.topic);
-        if (topic) { const b = el("div", "blk"); b.append(el("b", null, "Тема: "), topic); detail.appendChild(b); }
-        if (hw) { const b = el("div", "blk"); b.append(el("b", null, "Домашнє завдання: "), hw); detail.appendChild(b); }
-        for (const g of l.grades || []) {
-          if (g.comment) { const b = el("div", "blk"); b.append(el("b", null, `Коментар (${g.grade_value}): `), plain(g.comment)); detail.appendChild(b); }
-        }
-        if (!detail.children.length) detail.appendChild(el("div", "blk", "Немає додаткових відомостей."));
-        row.appendChild(detail);
-        row.addEventListener("click", () => row.classList.toggle("open"));
-        box.appendChild(row);
+        const panel = el("div", "panel");
+        const topic = textOf(ls.topic), hw = textOf(ls.homework);
+        const add = (k, v) => { const b = el("div"); b.append(el("div", "k", k), el("div", "v", v || "Не вказано")); panel.appendChild(b); };
+        add("Тема уроку", topic); add("Домашнє завдання", hw);
+        for (const g of ls.grades || []) if (g.comment) add(`Коментар (${g.grade_value})`, plain(g.comment));
+        body.appendChild(panel);
+        row.appendChild(body);
+        const ex = el("button", "expand"); ex.setAttribute("aria-label", "Деталі уроку"); ex.appendChild(svg(ICON.chev));
+        const toggle = () => row.classList.toggle("open");
+        ex.onclick = (e) => { e.stopPropagation(); toggle(); };
+        row.onclick = toggle;
+        row.appendChild(ex);
+        list.appendChild(row);
       });
-      container.appendChild(box);
+      page.appendChild(list);
     }
-
-    renderHomework();
-    document.getElementById("raw").textContent = JSON.stringify(json, null, 1).slice(0, 6000);
+    rawBox(page, json);
   }
 
-  function renderHomework() {
-    const c = document.getElementById("homework-container");
-    c.innerHTML = "";
-    let n = 0;
-    for (const day of weekDays) {
-      for (const l of day.lessons || []) {
-        const hw = textOf(l.homework);
-        if (!hw) continue;
-        n++;
-        const item = el("div", "hw-item");
-        item.appendChild(el("div", "hw-date", `${day.day_name || ""} ${day.date || ""}`.trim()));
-        item.appendChild(el("div", "hw-subj", l.subject_name || ""));
-        item.appendChild(el("div", "hw-text", hw));
-        c.appendChild(item);
+  // ================= SCREEN: schedule =================
+  const DOW = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+  async function schedule() {
+    const root = $("screen"); root.innerHTML = "";
+    const seg = el("div", "seg");
+    [["my", "Мій розклад"], ["school", "Розклад школи"]].forEach(([k, t]) => {
+      const b = el("button", S.schedTab === k ? "on" : "", t); b.onclick = () => { S.schedTab = k; schedule(); }; seg.appendChild(b);
+    });
+    root.appendChild(seg);
+    const holder = el("div"); root.appendChild(holder);
+    holder.appendChild(el("div", "spin"));
+    if (S.schedTab === "school") return schoolSchedule(holder);
+
+    let json;
+    try { json = await getWeek(S.weekAnchor); } catch (e) { holder.innerHTML = ""; return errorBox(holder, e); }
+    if (S.screen !== "schedule") return;
+    const days = daysOf(json);
+    const dates = days.map((d) => parseDate(d.date));
+    if (dates[0]) S.weekAnchor = dates[0].getTime() + 3 * DAY;
+    holder.innerHTML = "";
+    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; S.schedDay = null; schedule(); }, () => { S.weekAnchor += 7 * DAY; S.schedDay = null; schedule(); }));
+    if (!days.length) return holder.appendChild(el("div", "msg", "На цей тиждень даних немає."));
+
+    const todayUTC = (() => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); })();
+    let idx = S.schedDay != null && S.schedDay < days.length ? S.schedDay : dates.findIndex((d) => d && d.getTime() === todayUTC);
+    if (idx < 0) idx = 0;
+    const pills = el("div", "days");
+    days.forEach((d, i) => {
+      const dt = dates[i];
+      const b = el("button", "dpill" + (i === idx ? " on" : ""));
+      b.append(el("span", null, DOW[(dt ? (dt.getUTCDay() + 6) % 7 : i)] || ""), el("b", null, dt ? dt.getUTCDate() : ""));
+      b.onclick = () => { S.schedDay = i; schedule(); };
+      pills.appendChild(b);
+    });
+    holder.appendChild(pills);
+    const page = el("div", "page"); holder.appendChild(page);
+    const day = days[idx]; const dt = dates[idx];
+    const h = el("div", "dayh"); const l = el("div");
+    l.append(el("div", "dn", day.day_name || ""), el("div", "dd", dt ? `${dt.getUTCDate()} ${dt.toLocaleDateString("uk-UA", { month: "long", timeZone: "UTC" })}` : ""));
+    h.appendChild(l); page.appendChild(h);
+    const lessons = day.lessons || [];
+    if (!lessons.length) return page.appendChild(el("div", "msg", "Уроків немає"));
+    const list = el("div", "list");
+    let prevN = null;
+    lessons.forEach((ls, i) => {
+      const n = lessonNum(ls, i);
+      if (prevN === 4 && n === 5 && list.children.length) { page.appendChild(list.cloneNode(true)); list.innerHTML = ""; page.appendChild(brk()); }
+      const row = el("div", "srow");
+      row.appendChild(el("div", "badge", n));
+      const b = el("div", "lbody"); b.appendChild(el("div", "lsub", ls.subject_name || "—"));
+      const m = metaOf(ls); if (m) b.appendChild(el("div", "lmeta", m));
+      row.appendChild(b);
+      const t = lessonTime(ls, n).split(" – ");
+      if (t[0]) { const tm = el("div", "tm"); tm.append(el("div", null, t[0]), el("div", null, t[1] || "")); row.appendChild(tm); }
+      list.appendChild(row); prevN = n;
+    });
+    page.appendChild(list);
+  }
+  function brk() {
+    const b = el("div", "break"); b.append(el("span", null, "Обідня перерва / Прогулянка"));
+    const t = el("span"); t.style.textAlign = "right"; t.innerHTML = "12:35<br>13:30"; b.appendChild(t); return b;
+  }
+
+  async function schoolSchedule(holder) {
+    // class schedule endpoint; shape not known in advance -> best effort + raw fallback
+    holder.innerHTML = "";
+    const classId = S.profile && S.profile.class_id;
+    if (!classId) return holder.appendChild(el("div", "msg", "Не вдалося визначити клас."));
+    const chip = el("div", "page"); const c = el("button", "moreb", `${S.profile.class_name || "Клас"} клас`); c.style.width = "fit-content"; c.style.padding = "0 20px"; chip.appendChild(c);
+    holder.appendChild(chip);
+    const box = el("div", "page"); holder.appendChild(box);
+    box.appendChild(el("div", "spin"));
+    let json;
+    try { json = await api(`/api?path=${encodeURIComponent("/schedule/class/get/" + classId)}`); }
+    catch (e) { box.innerHTML = ""; return errorBox(box, e); }
+    box.innerHTML = "";
+    const days = findDays(json);
+    if (!days.length) { box.appendChild(el("div", "msg", "Не вдалося розпізнати розклад школи. Надішліть мені сирі дані нижче.")); return rawBox(box, json); }
+    days.forEach((d) => {
+      const h = el("div", "dayh"); const l = el("div"); l.append(el("div", "dn", d.name)); h.appendChild(l); box.appendChild(h);
+      const list = el("div", "list");
+      d.lessons.forEach((ls, i) => {
+        const b = el("div", "sblock c" + (i % 4));
+        const th = el("div", "th"); th.append(el("div", "badge", ls.n), el("span", null, ls.time)); b.appendChild(th);
+        const it = el("div", "it"); it.append(el("div", "s", ls.subject), el("div", "m", ls.meta)); b.appendChild(it);
+        list.appendChild(b);
+      });
+      box.appendChild(list);
+    });
+    rawBox(box, json);
+  }
+  // Look for [{...lessons:[...]}] anywhere in the JSON
+  function findDays(json) {
+    const out = [];
+    (function walk(o, depth) {
+      if (!o || depth > 6) return;
+      if (Array.isArray(o)) {
+        if (o.length && o.every((x) => x && typeof x === "object" && Array.isArray(x.lessons))) {
+          o.forEach((d, di) => out.push({
+            name: d.day_name || d.name || DOW[di] || "",
+            lessons: d.lessons.map((l, i) => ({
+              n: lessonNum(l, i),
+              time: lessonTime(l, lessonNum(l, i)),
+              subject: l.subject_name || l.subject || l.name || "—",
+              meta: [lessonRoom(l), l.teacher_name || l.teacher].filter(Boolean).join(" · "),
+            })),
+          }));
+          return;
+        }
+        o.forEach((x) => walk(x, depth + 1));
+      } else if (typeof o === "object") for (const k in o) walk(o[k], depth + 1);
+    })(json, 0);
+    return out;
+  }
+
+  // ================= SCREEN: grades =================
+  async function grades() {
+    const root = $("screen"); root.innerHTML = "";
+    root.appendChild(whoRow());
+    const holder = el("div"); root.appendChild(holder);
+    const first = new Date(S.monthAnchor);
+    const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0));
+    const label = `${first.toLocaleDateString("uk-UA", { month: "long", year: "numeric", timeZone: "UTC" })}`;
+    holder.appendChild(switcher(label.charAt(0).toUpperCase() + label.slice(1),
+      () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() - 1, 1); grades(); },
+      () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1); grades(); }));
+    const page = el("div", "page"); holder.appendChild(page);
+    page.appendChild(el("div", "spin"));
+
+    // all weeks that touch the month
+    const mondays = [];
+    for (let m = mondayOf(first.getTime()); m <= last.getTime(); m += 7 * DAY) mondays.push(m);
+    let weeks;
+    try { weeks = await Promise.all(mondays.map((m) => getWeek(m + 3 * DAY))); }
+    catch (e) { page.innerHTML = ""; return errorBox(page, e); }
+    if (S.screen !== "grades") return;
+    page.innerHTML = "";
+
+    const bySubject = new Map();
+    for (const w of weeks) for (const day of daysOf(w)) {
+      const dd = parseDate(day.date);
+      if (!dd || dd < first || dd > last) continue;
+      for (const l of day.lessons || []) for (const g of l.grades || []) {
+        const s = l.subject_name || "—";
+        if (!bySubject.has(s)) bySubject.set(s, []);
+        bySubject.get(s).push({ g, dd });
       }
     }
-    if (!n) c.innerHTML = '<div class="status">На цьому тижні домашніх завдань немає.</div>';
+    if (!bySubject.size) return page.appendChild(el("div", "msg", "За цей місяць оцінок немає."));
+    const subjects = [...bySubject.keys()].sort((a, b) => a.localeCompare(b, "uk"));
+    for (const s of subjects) {
+      const items = bySubject.get(s).sort((a, b) => a.dd - b.dd);
+      const nums = items.map((x) => parseFloat(x.g.grade_value)).filter((v) => !isNaN(v));
+      const card = el("div", "card");
+      const h = el("h3"); h.appendChild(el("span", null, s));
+      if (nums.length) h.appendChild(el("small", null, "середня " + (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)));
+      card.appendChild(h);
+      const tiles = el("div", "gtiles");
+      for (const { g, dd } of items) {
+        const t = el("div", "gt " + (gradeKind(g) === "p" ? "" : gradeKind(g)));
+        t.append(el("b", null, g.grade_value), el("span", null, `${pad(dd.getUTCDate())}.${pad(dd.getUTCMonth() + 1)}`));
+        t.title = [g.grade_type_name, g.comment && plain(g.comment)].filter(Boolean).join(" — ");
+        tiles.appendChild(t);
+      }
+      card.appendChild(tiles); page.appendChild(card);
+    }
   }
 
-  async function loadWeek() {
-    const c = document.getElementById("daybook-container");
-    c.innerHTML = '<div class="status">Завантаження...</div>';
+  // ================= SCREEN: canteen =================
+  const iso = (d) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  const dmy = (d) => `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+  function money(v) { const n = Number(v); return isNaN(n) ? String(v) : (Math.round(n * 100) / 100).toLocaleString("uk-UA", { maximumFractionDigits: 2 }); }
+
+  async function canteen() {
+    const root = $("screen"); root.innerHTML = "";
+    const page = el("div", "page"); root.appendChild(page);
+    const bal = el("div", "bal");
+    bal.appendChild(el("div", "l", "Баланс"));
+    const n = el("div", "n"); const b = S.profile && S.profile.canteen_balance;
+    n.textContent = b != null ? money(b) + " " : "—"; n.appendChild(el("small", null, "грн."));
+    bal.appendChild(n); page.appendChild(bal);
+    const sums = el("div", "two"); page.appendChild(sums);
+
+    const now = new Date();
+    if (!S.to) S.to = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    if (!S.from) S.from = S.to - 60 * DAY;
+    const f = el("div", "filters"); f.appendChild(el("h3", null, "Діапазон дат"));
+    const row = el("div", "frow");
+    const mk = (lbl, val, cb) => { const l = el("label", null, lbl); const i = document.createElement("input"); i.type = "date"; i.value = iso(new Date(val)); i.onchange = () => { if (i.value) { cb(Date.parse(i.value + "T00:00:00Z")); canteen(); } }; l.appendChild(i); return l; };
+    row.append(mk("Від", S.from, (v) => (S.from = v)), mk("До", S.to, (v) => (S.to = v)));
+    f.appendChild(row);
+    const tl = el("label", null, "Тип транзакції"); const sel = document.createElement("select");
+    [["all", "Всі"], ["in", "Надходження"], ["out", "Трати"]].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; if (S.ctype === v) o.selected = true; sel.appendChild(o); });
+    sel.onchange = () => { S.ctype = sel.value; canteen(); }; tl.appendChild(sel); f.appendChild(tl);
+    page.appendChild(f);
+    const listBox = el("div"); page.appendChild(listBox); listBox.appendChild(el("div", "spin"));
+
+    // endpoint date format isn't known -> try a few
+    const id = S.studentId; let json = null, lastErr = null;
+    const fmts = [(d) => iso(d), (d) => dmy(d), (d) => String(d.getTime())];
+    for (const fm of fmts) {
+      try {
+        const p = `/canteen/get/${id}/${fm(new Date(S.from))}/${fm(new Date(S.to))}`;
+        json = await api(`/api?path=${encodeURIComponent(p)}`); break;
+      } catch (e) { lastErr = e; }
+    }
+    if (S.screen !== "canteen") return;
+    listBox.innerHTML = "";
+    if (!json) return errorBox(listBox, lastErr);
+    const tx = findTransactions(json);
+    if (!tx.length) { listBox.appendChild(el("div", "msg", "Транзакцій за цей період не знайдено (або формат даних невідомий).")); return rawBox(listBox, json); }
+    let income = 0, spend = 0;
+    const shown = tx.filter((t) => S.ctype === "all" || (S.ctype === "in") === (t.amount > 0));
+    tx.forEach((t) => (t.amount > 0 ? (income += t.amount) : (spend += t.amount)));
+    const a = el("div"); a.style.cssText = "background:var(--green);color:var(--green-fg)"; a.append(el("div", "l", "Надходження"), el("div", "n", money(income) + " грн."));
+    const bb = el("div"); bb.style.cssText = "background:var(--yellow);color:var(--yellow-fg)"; bb.append(el("div", "l", "Трати"), el("div", "n", money(spend) + " грн."));
+    sums.append(a, bb);
+    shown.forEach((t) => {
+      const c = el("div", "tx"); const top = el("div", "top");
+      const ic = el("div", "ic" + (t.amount > 0 ? " in" : "")); ic.appendChild(svg(t.amount > 0 ? ICON.plus : ICON.dish));
+      const tt = el("div", "tt"); tt.append(el("b", null, t.amount > 0 ? "Надходження" : "Трати"), el("span", null, t.date));
+      top.append(ic, tt, el("div", "am", (t.amount > 0 ? "+" : "−") + money(Math.abs(t.amount)) + " грн."));
+      c.appendChild(top);
+      t.lines.forEach((ln) => { const r = el("div", "line"); r.append(el("span", null, ln.name), el("span", null, ln.qty)); c.appendChild(r); });
+      listBox.appendChild(c);
+    });
+    rawBox(listBox, json);
+  }
+  function findTransactions(json) {
+    let best = [];
+    (function walk(o, depth) {
+      if (!o || depth > 6) return;
+      if (Array.isArray(o)) {
+        const objs = o.filter((x) => x && typeof x === "object");
+        if (objs.length && objs.some((x) => pick(x, ["amount", "sum", "total", "price", "value"]) != null) && objs.length > best.length) {
+          best = objs.map((x) => {
+            let amt = Number(pick(x, ["amount", "sum", "total", "value", "price"]));
+            const type = String(pick(x, ["type", "type_name", "operation", "kind"]) || "");
+            if (!isNaN(amt) && /витрат|трат|spend|expense|debit|out/i.test(type) && amt > 0) amt = -amt;
+            const raw = pick(x, ["date", "created_at", "time", "datetime", "period"]) || "";
+            const pd = parseDate(raw) || (raw ? new Date(raw) : null);
+            const items = pick(x, ["items", "products", "positions", "dishes", "lines", "details"]);
+            return {
+              amount: isNaN(amt) ? 0 : amt,
+              date: pd && !isNaN(pd) ? dmy(pd) : String(raw),
+              lines: Array.isArray(items) ? items.map((it) => ({
+                name: String(pick(it, ["name", "title", "product", "dish"]) || ""),
+                qty: [pick(it, ["quantity", "qty", "count", "amount_items"]), pick(it, ["price", "cost"])].filter((v) => v != null).join(" × "),
+              })) : [],
+            };
+          });
+        }
+        o.forEach((x) => walk(x, depth + 1));
+      } else if (typeof o === "object") for (const k in o) walk(o[k], depth + 1);
+    })(json, 0);
+    return best;
+  }
+
+  // ================= SCREEN: feed (notifications) =================
+  async function feed(append) {
+    const root = $("screen");
+    if (!append) { root.innerHTML = ""; S.feedPage = 1; }
+    let box = $("feedbox");
+    if (!append) {
+      const page = el("div", "page"); box = el("div", "list"); box.id = "feedbox";
+      const back = el("button", "moreb", "← Назад"); back.style.cssText = "width:fit-content;padding:0 20px"; back.onclick = () => go(S.prevScreen || "diary");
+      page.append(back, box, el("div", "spin")); page.lastChild.id = "feedspin"; root.appendChild(page);
+    }
+    let data;
+    try { data = await api(`/feed?page=${S.feedPage}`); } catch (e) { $("feedspin") && $("feedspin").remove(); return errorBox(box.parentNode, e); }
+    if (S.screen !== "feed") return;
+    const sp = $("feedspin"); if (sp) sp.remove();
+    const items = (data.data && data.data.items) || [];
+    if (!items.length && !append) box.parentNode.appendChild(el("div", "msg", "Немає нових подій."));
+    for (const it of items) {
+      const r = el("div", "fi"); const b = el("div", "b");
+      b.appendChild(el("div", "tm", it.time_formatted || ""));
+      const title = plain(it.title); b.appendChild(el("div", "tt", title));
+      const desc = plain(it.description); if (desc && desc !== title) b.appendChild(el("div", "ds", desc));
+      r.appendChild(b);
+      const gm = String(it.icon || "").match(/grades\/(\d+)/);
+      if (gm) r.appendChild(gradeChip({ grade_value: gm[1] }));
+      box.appendChild(r);
+    }
+    const old = $("feedmore"); if (old) old.remove();
+    if (items.length) {
+      const m = el("button", "moreb", "Показати ще"); m.id = "feedmore";
+      m.onclick = () => { S.feedPage++; m.remove(); feed(true); };
+      box.parentNode.appendChild(m);
+    }
+  }
+
+  // ================= SCREEN: more =================
+  function more() {
+    const root = $("screen"); root.innerHTML = "";
+    const page = el("div", "page"); root.appendChild(page);
+    const me = el("div", "me");
+    const nm = (S.profile && S.profile.student_name) || "";
+    me.appendChild(el("div", "av", (nm.trim().split(/\s+/)[1] || nm || "?").charAt(0).toUpperCase()));
+    const b = el("div"); b.append(el("b", null, nm), el("span", null, S.profile && S.profile.class_name ? `${S.profile.class_name} клас` : "")); me.appendChild(b);
+    page.appendChild(me);
+    const list = el("div", "list");
+    const item = (icon, text, fn, chevron) => {
+      const r = el("button", "mi"); const ic = el("span", "ic"); ic.appendChild(svg(icon));
+      r.append(ic, el("span", "t", text));
+      if (chevron) r.appendChild(svg(ICON.right));
+      r.onclick = fn; list.appendChild(r);
+    };
+    const open = (path) => () => window.open(SCHOOL + path, "_blank", "noopener");
+    item(ICON.mail, "Повідомлення", () => go("feed"));
+    item(ICON.info, "Про нас", open("/static/common_information"), true);
+    item(ICON.people, "Батькам", open("/static/pupils_rules"), true);
+    item(ICON.book, "Підручники", open("/"), true);
+    item(ICON.help, "Часті запитання", open("/"));
+    page.appendChild(list);
+    const out = el("button", "mi out"); const ic = el("span", "ic"); ic.appendChild(svg(ICON.out));
+    out.append(ic, el("span", "t", "Вихід")); out.onclick = logout; page.appendChild(out);
+  }
+
+  // ================= router =================
+  const TITLES = { diary: "Щоденник", schedule: "Розклад", grades: "Успішність", canteen: "Їдальня", more: "Ще", feed: "Повідомлення" };
+  function go(screen) {
+    if (screen === "feed") S.prevScreen = S.screen === "feed" ? S.prevScreen : S.screen;
+    S.screen = screen;
+    $("title").textContent = TITLES[screen]; $("title").classList.toggle("long", TITLES[screen].length > 10);
+    document.querySelectorAll("#bn button").forEach((b) => b.classList.toggle("on", b.dataset.s === screen));
+    window.scrollTo(0, 0);
+    const run = { diary, schedule, grades, canteen, more, feed }[screen];
+    Promise.resolve(run()).catch((e) => { const r = $("screen"); r.innerHTML = ""; errorBox(r, e); handleAuth(e); });
+  }
+  function handleAuth(e) {
+    if (e && (e.status === 401) && /Unauthenticated|Missing X-Session/i.test(e.message)) {
+      /* session expired: send back to login */
+      logout("Сесія завершилась. Увійдіть знову.");
+    }
+  }
+
+  // ================= login / logout =================
+  const loginBtn = $("login-btn"), loginStatus = $("login-status");
+  const workerInput = $("worker-url");
+  workerInput.value = WORKER_URL === DEFAULT_WORKER_URL ? "" : WORKER_URL;
+  function setStatus(msg, isErr) { loginStatus.textContent = msg; loginStatus.className = "st" + (isErr ? " error" : ""); }
+
+  async function login() {
+    const email = $("email").value.trim(), password = $("password").value;
+    if (!email || !password) return setStatus("Заповніть усі поля.", true);
+    const typed = workerInput.value.trim().replace(/\/+$/, "");
+    if (typed) { WORKER_URL = typed; lsSet("school_worker_url", typed); }
+    loginBtn.disabled = true; setStatus("Вхід...", false);
     try {
-      const q = `/daybook?student_id=${STUDENT_ID}&date=${anchor}` + (weekMode ? `&mode=${weekMode}` : "");
-      const { data, headers } = await proxiedFetch(q, true);
-      const m = headers.get("X-Week-Mode");
-      if (m && m !== "explicit") weekMode = m;
-      renderDaybook(data);
-    } catch (err) {
-      showErr("daybook-container", err.message);
-    }
+      const resp = await fetch(`${WORKER_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, remember: $("remember").checked }) });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) {
+        setStatus((data.error || "Помилка входу.") + (data.debug_status ? "\n" + JSON.stringify(data, null, 1) : ""), true);
+        loginBtn.disabled = false; return;
+      }
+      setSession(data.session_cookie, $("remember").checked);
+      $("password").value = "";
+      start();
+    } catch (err) { setStatus("Не вдалося з'єднатися з сервером: " + err.message, true); loginBtn.disabled = false; }
+  }
+  function logout(msg) {
+    clearSession(); S.profile = null; S.studentId = null; lsSet("school_student_id", ""); S.weeks.clear();
+    $("app-view").classList.add("hidden"); $("bn").classList.add("hidden"); $("login-view").classList.remove("hidden");
+    loginBtn.disabled = false; setStatus(typeof msg === "string" ? msg : "", typeof msg === "string");
+  }
+  async function start() {
+    $("login-view").classList.add("hidden");
+    $("app-view").classList.remove("hidden"); $("bn").classList.remove("hidden");
+    loading();
+    try { await ensureProfile(); } catch (e) { const r = $("screen"); r.innerHTML = ""; errorBox(r, e); return handleAuth(e); }
+    go(S.screen === "feed" ? "diary" : S.screen);
   }
 
-  // ---------- feed ----------
-  let feedPage = 1;
-  function renderFeed(json, append) {
-    const container = document.getElementById("feed-container");
-    const items = (json.data && json.data.items) || [];
-    if (!append) container.innerHTML = "";
-    if (!items.length && !append) {
-      container.innerHTML = '<div class="status">Немає нових подій.</div>';
-    }
-    for (const item of items) {
-      const box = el("div", "feed-item");
-      box.appendChild(el("div", "feed-time", item.time_formatted || ""));
-      const row = el("div", "feed-row");
-      const left = el("div");
-      const title = plain(item.title);
-      left.appendChild(el("div", "feed-title", title));
-      const desc = plain(item.description);
-      if (desc && desc !== title) left.appendChild(el("div", "feed-desc", desc));
-      row.appendChild(left);
-      const gm = String(item.icon || "").match(/grades\/(\d+)/);
-      if (gm) row.appendChild(gradePill(gm[1]));
-      box.appendChild(row);
-      container.appendChild(box);
-    }
-    document.getElementById("feed-more").style.display = items.length ? "block" : "none";
-  }
-
-  async function loadFeed(append) {
-    try {
-      const { data } = await proxiedFetch(`/feed?page=${feedPage}`, true);
-      renderFeed(data, append);
-    } catch (err) {
-      showErr("feed-container", err.message);
-    }
-  }
-
-  async function ensureIds() {
-    if (STUDENT_ID) return;
-    const { data: d } = await proxiedFetch("/discover", true);
-    if (!d.current_student_id) {
-      throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
-    }
-    STUDENT_ID = d.current_student_id;
-    lsSet("school_student_id", STUDENT_ID);
-  }
-
-  async function loadData() {
-    try {
-      await ensureIds();
-    } catch (err) {
-      showErr("daybook-container", err.message);
-      return;
-    }
-    loadWeek();
-    feedPage = 1;
-    loadFeed(false);
-  }
-
-  function showApp() {
-    loginView.style.display = "none";
-    appView.style.display = "block";
-    loadData();
-  }
-
-  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === t));
-    for (const name of ["diary", "homework", "feed"]) {
-      document.getElementById("tab-" + name).style.display = name === t.dataset.tab ? "block" : "none";
-    }
-  }));
-  document.getElementById("prev-week").addEventListener("click", () => { anchor -= 7 * DAY_MS; loadWeek(); });
-  document.getElementById("next-week").addEventListener("click", () => { anchor += 7 * DAY_MS; loadWeek(); });
-  document.getElementById("today-btn").addEventListener("click", () => { anchor = Date.now(); loadWeek(); });
-  document.getElementById("feed-more").addEventListener("click", () => { feedPage++; loadFeed(true); });
-  document.getElementById("debug-link").addEventListener("click", () => {
-    const r = document.getElementById("raw");
-    r.style.display = r.style.display === "none" ? "block" : "none";
-  });
-
+  document.querySelectorAll("#bn button").forEach((b) => b.addEventListener("click", () => go(b.dataset.s)));
+  $("bell").addEventListener("click", () => go("feed"));
   loginBtn.addEventListener("click", login);
-  logoutBtn.addEventListener("click", logout);
+  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
 
-  // auto-resume if a session is already stored from this browser tab
-  if (getSession()) {
-    showApp();
-  }
+  if (getSession()) start();
+})();
 </script>
 </body>
 </html>

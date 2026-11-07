@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v13";
+const WORKER_VERSION = "v14";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -238,7 +238,7 @@ async function schoolGet(request, targetPath) {
   const incomingUrl = new URL(request.url);
   const params = new URLSearchParams();
   for (const [k, v] of incomingUrl.searchParams) {
-    if (["student_id", "week", "page", "date", "mode"].includes(k)) continue;
+    if (["student_id", "week", "page", "date", "mode", "path"].includes(k)) continue;
     params.set(k, v);
   }
   // `date` (unix ms) picks which week to load; timestamp is what the school reads.
@@ -326,10 +326,16 @@ async function handleDiscover(request) {
     name: typeof names[id] === "string" ? names[id] : "",
     class_name: (classes[id] && classes[id].name) || "",
   }));
-  const current = user.current_child && user.current_child.id;
+  const cc = user.current_child || {};
+  const current = cc.id;
+  const cls = current && classes[current] ? classes[current] : {};
   return jsonResponse({
     worker_version: WORKER_VERSION,
     group: user.group || null,
+    student_name: cc.name || "",
+    class_id: cls.id || null,
+    class_name: cls.name || "",
+    canteen_balance: cc.canteen_balance != null ? cc.canteen_balance : user.canteen_balance != null ? user.canteen_balance : null,
     current_student_id: current ? String(current) : children[0] ? children[0].student_id : null,
     children,
   });
@@ -353,6 +359,16 @@ function schoolYearWeek(d = new Date()) {
   return Math.floor((d - monday) / (7 * 86400000)) + 1;
 }
 
+// Allowlisted read-only passthrough for the school's JSON endpoints
+// (schedule, journal, canteen...). Only these paths can be requested.
+const API_ALLOW = [
+  /^\/schedule\/(student|class)\/get(\/\d+){0,2}$/,
+  /^\/studentparent\/journal\/get(\/[\w.-]+){0,2}$/,
+  /^\/canteen\/get(\/[\w.-]+){0,4}$/,
+  /^\/daybook\/get(\/\d+){1,2}$/,
+  /^\/feed\/get\/\d+$/,
+];
+
 export default {
   async fetch(request) {
     if (request.method === "OPTIONS") {
@@ -364,6 +380,14 @@ export default {
     try {
       if (url.pathname === "/login" && request.method === "POST") {
         return await handleLogin(request);
+      }
+
+      if (url.pathname === "/api" && request.method === "GET") {
+        const path = url.searchParams.get("path") || "";
+        if (!API_ALLOW.some((re) => re.test(path))) {
+          return jsonResponse({ error: "Path not allowed", path }, 403);
+        }
+        return await proxyGet(request, path);
       }
 
       if (url.pathname === "/discover" && request.method === "GET") {
