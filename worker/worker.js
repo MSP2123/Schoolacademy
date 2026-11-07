@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v15";
+const WORKER_VERSION = "v16";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -415,9 +415,15 @@ export default {
       }
 
       if (url.pathname === "/daybook" && request.method === "GET") {
-        const studentId = url.searchParams.get("student_id");
-        if (!studentId) {
-          return jsonResponse({ error: "student_id is required" }, 400);
+        let studentId = url.searchParams.get("student_id");
+        // Self-heal: an old/cached frontend may send "null" or nothing. Work it out
+        // from the logged-in account instead of asking the school for student "null".
+        if (!/^\d+$/.test(studentId || "")) {
+          const found = await (await handleDiscover(request)).json().catch(() => ({}));
+          studentId = found && found.current_student_id;
+          if (!/^\d+$/.test(studentId || "")) {
+            return jsonResponse({ error: "Could not determine the student for this account.", worker_version: WORKER_VERSION, debug: found && found.debug }, 400);
+          }
         }
         // Route is daybook/get/{student}/{week?}; the school wants a week
         // inside the school year. Try: explicit ?week, none (server picks
