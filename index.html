@@ -31,7 +31,7 @@
   .hidden { display: none !important; }
 
   /* header */
-  .hdr { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 8px 24px; gap: 8px; }
+  .hdr { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 8px 24px; gap: 8px; position: sticky; top: 0; z-index: 20; background: var(--bg); }
   .hdr h1 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 800; letter-spacing: -0.5px; }
   .hdr h1.long { font-size: 26px; line-height: 32px; }
   .hdr .acts { display: flex; align-items: center; gap: 4px; }
@@ -287,7 +287,6 @@
     <div class="acts">
       <button class="ibtn" id="bell" aria-label="Сповіщення"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/></svg><span class="dot"></span></button>
       <button class="ibtn sq" id="moodbtn" aria-label="Настрій"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 16a4.5 4.5 0 0 1 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
-      <button class="lang" aria-label="Мова: українська">UK</button>
     </div>
   </header>
   <main id="screen"></main>
