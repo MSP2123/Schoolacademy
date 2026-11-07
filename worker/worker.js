@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v12";
+const WORKER_VERSION = "v13";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -238,9 +238,12 @@ async function schoolGet(request, targetPath) {
   const incomingUrl = new URL(request.url);
   const params = new URLSearchParams();
   for (const [k, v] of incomingUrl.searchParams) {
-    if (k === "student_id" || k === "week" || k === "page") continue;
+    if (["student_id", "week", "page", "date", "mode"].includes(k)) continue;
     params.set(k, v);
   }
+  // `date` (unix ms) picks which week to load; timestamp is what the school reads.
+  const dateParam = incomingUrl.searchParams.get("date");
+  if (dateParam && /^\d+$/.test(dateParam)) params.set("timestamp", dateParam);
   if (!params.has("timestamp")) params.set("timestamp", Date.now().toString());
 
   let xsrfHeader = {};
@@ -376,15 +379,31 @@ export default {
         // inside the school year. Try: explicit ?week, none (server picks
         // from timestamp), school-year week, ISO week - first success wins.
         const explicit = url.searchParams.get("week");
-        const candidates = explicit
-          ? [explicit]
-          : [null, String(schoolYearWeek()), String(isoWeek())];
+        const dateParam = url.searchParams.get("date");
+        const when = dateParam && /^\d+$/.test(dateParam) ? new Date(Number(dateParam)) : new Date();
+        const options = {
+          school: String(schoolYearWeek(when)),
+          iso: String(isoWeek(when)),
+          none: null,
+        };
+        // Order: the format that worked last time (?mode=), then the rest.
+        // When browsing other weeks, "none" goes last: the server may ignore
+        // the timestamp then and hand back the current week.
+        const mode = url.searchParams.get("mode");
+        let order = dateParam ? ["school", "iso", "none"] : ["none", "school", "iso"];
+        if (mode && order.includes(mode)) order = [mode, ...order.filter((m) => m !== mode)];
+        const candidates = explicit ? [["explicit", explicit]] : order.map((m) => [m, options[m]]);
         const attempts = [];
-        for (const w of candidates) {
+        for (const [name, w] of candidates) {
           const r = await schoolGet(request, `/daybook/get/${studentId}${w ? "/" + w : ""}`);
           if (r.early) return r.early;
-          if (r.ok) return withCors(r.resp);
-          attempts.push({ week: w, ...r.debug });
+          if (r.ok) {
+            const out = withCors(r.resp);
+            out.headers.set("X-Week-Mode", name);
+            out.headers.set("Access-Control-Expose-Headers", "X-Week-Mode");
+            return out;
+          }
+          attempts.push({ mode: name, week: w, ...r.debug });
         }
         return jsonResponse(
           { error: "Daybook request failed for every week format tried.", worker_version: WORKER_VERSION, attempts },
