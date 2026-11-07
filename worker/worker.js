@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v7";
+const WORKER_VERSION = "v8";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -139,7 +139,13 @@ async function handleLogin(request) {
   if (!token) {
     return jsonResponse(
       {
-        error: "Could not find CSRF token on login page. Site structure may have changed.",
+        error:
+          "Could not find CSRF token on login page. [" + WORKER_VERSION +
+          "] status=" + loginPageResp.status +
+          " server=" + (loginPageResp.headers.get("server") || "?") +
+          " len=" + loginPageHtml.length +
+          " url=" + loginPageResp.url +
+          " body=" + loginPageHtml.slice(0, 400).replace(/\s+/g, " "),
         worker_version: WORKER_VERSION,
         debug_status: loginPageResp.status,
         debug_final_url: loginPageResp.url,
