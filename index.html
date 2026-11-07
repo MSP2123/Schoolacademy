@@ -174,6 +174,21 @@
   .fi .ds { font-size: 13px; color: var(--sub); margin-top: 2px; overflow-wrap: anywhere; }
   .moreb { height: 48px; border: 0; border-radius: 24px; background: var(--chip); color: var(--chip-fg); font-size: 15px; font-weight: 700; }
 
+  .marks { display: inline-flex; gap: 4px; vertical-align: middle; margin-left: 6px; }
+  .mk { width: 22px; height: 22px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--yellow); color: var(--yellow-fg); }
+  .mk.cm { background: var(--pink); color: var(--pink-fg); }
+  .les.cur .mk { background: #fff; color: var(--primary); }
+  .gt { position: relative; }
+  .gt .cdot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+  .switch .mid { position: relative; gap: 8px; font-size: 15px; white-space: nowrap; }
+  .switch .mid input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; cursor: pointer; }
+  .sblock .it { display: flex; align-items: center; gap: 10px; }
+  .sblock .it .tx2 { flex: 1; min-width: 0; }
+  .gbadge { flex: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.75); border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+  .sblock .sep { height: 1px; background: rgba(0,0,0,.08); }
+  .tx .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tx .chips span { background: #fff; border-radius: 10px; padding: 4px 10px; font-size: 12px; color: var(--sub); }
+
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
   nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
@@ -277,6 +292,9 @@
     out: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg>',
     dish: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M5 18a7 7 0 0 1 14 0M12 8V6M10 6h4"/></svg>',
     plus: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    hw: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M9 9h6M9 13h4"/></svg>',
+    chat: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>',
+    cal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     group: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/></svg>',
   };
 
@@ -430,20 +448,45 @@
   }
 
   // ================= week switcher =================
+  function rangeLabel(a, b) {
+    if (a.getUTCMonth() === b.getUTCMonth()) return `${a.getUTCDate()} – ${fmtShort(b)}`;
+    return `${fmtShort(a)} – ${fmtShort(b)}`;
+  }
   function weekLabel(json, anchor) {
     const dates = daysOf(json).map((d) => parseDate(d.date)).filter(Boolean);
-    if (dates.length) return `${fmtShort(dates[0])} – ${fmtShort(dates[dates.length - 1])}`;
+    if (dates.length) return rangeLabel(dates[0], dates[dates.length - 1]);
     const m = mondayOf(anchor);
-    return `${fmtShort(new Date(m))} – ${fmtShort(new Date(m + 6 * DAY))}`;
+    return rangeLabel(new Date(m), new Date(m + 6 * DAY));
   }
-  function switcher(label, onPrev, onNext) {
+  // opts: { type: "date"|"month", value: "YYYY-MM-DD"|"YYYY-MM", onPick(value) } -> tapping the label opens a calendar
+  function switcher(label, onPrev, onNext, opts) {
     const w = el("div", "switch");
     const p = el("button", "prev"); p.setAttribute("aria-label", "Назад"); p.appendChild(svg(ICON.left)); p.onclick = onPrev;
-    const mid = el("button", "mid", label);
+    const mid = el("button", "mid"); mid.appendChild(el("span", null, label));
+    if (opts) {
+      mid.appendChild(svg(ICON.cal));
+      mid.setAttribute("aria-label", "Обрати дату");
+      const inp = document.createElement("input");
+      inp.type = opts.type; inp.value = opts.value || "";
+      inp.onclick = () => { try { inp.showPicker && inp.showPicker(); } catch {} };
+      inp.onchange = () => { if (inp.value) opts.onPick(inp.value); };
+      mid.appendChild(inp);
+    }
     const n = el("button", "next"); n.setAttribute("aria-label", "Вперед"); n.appendChild(svg(ICON.right)); n.onclick = onNext;
     w.append(p, mid, n);
     return w;
   }
+  const hasComment = (l) => (l.grades || []).some((g) => g.comment && plain(g.comment)) || !!textOf(l.comment);
+  function marksNode(l) {
+    const hw = !!textOf(l.homework), cm = hasComment(l);
+    if (!hw && !cm) return null;
+    const m = el("span", "marks");
+    if (hw) { const x = el("span", "mk"); x.title = "Є домашнє завдання"; x.appendChild(svg(ICON.hw)); m.appendChild(x); }
+    if (cm) { const x = el("span", "mk cm"); x.title = "Є коментар"; x.appendChild(svg(ICON.chat)); m.appendChild(x); }
+    return m;
+  }
+  const dateVal = (ms) => { const d = new Date(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  const pickWeek = (v) => Date.parse(v + "T12:00:00Z");
   function whoRow() {
     const r = el("div", "who");
     r.appendChild(el("div", "nm", (S.profile && S.profile.student_name) || ""));
@@ -464,7 +507,8 @@
     const dates = daysOf(json).map((d) => parseDate(d.date)).filter(Boolean);
     if (dates.length) S.weekAnchor = dates[0].getTime() + 3 * DAY;
     holder.innerHTML = "";
-    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; diary(); }, () => { S.weekAnchor += 7 * DAY; diary(); }));
+    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; diary(); }, () => { S.weekAnchor += 7 * DAY; diary(); },
+      { type: "date", value: dateVal(S.weekAnchor), onPick: (v) => { S.weekAnchor = pickWeek(v); diary(); } }));
     const page = el("div", "page"); holder.appendChild(page);
 
     const days = daysOf(json);
@@ -485,7 +529,8 @@
         const row = el("div", "les" + (cur ? " cur" : ""));
         row.appendChild(el("div", "badge", n));
         const body = el("div", "lbody");
-        body.appendChild(el("div", "lsub", ls.subject_name || "—"));
+        const subj = el("div", "lsub", ls.subject_name || "—"); const mk = marksNode(ls); if (mk) subj.appendChild(mk);
+        body.appendChild(subj);
         if (time) body.appendChild(el("div", "lmeta", time + (cur ? " · Зараз" : "")));
         const meta = metaOf(ls); if (meta) body.appendChild(el("div", "lmeta", meta));
         if ((ls.grades || []).length) {
@@ -530,7 +575,8 @@
     const dates = days.map((d) => parseDate(d.date));
     if (dates[0]) S.weekAnchor = dates[0].getTime() + 3 * DAY;
     holder.innerHTML = "";
-    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; S.schedDay = null; schedule(); }, () => { S.weekAnchor += 7 * DAY; S.schedDay = null; schedule(); }));
+    holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; S.schedDay = null; schedule(); }, () => { S.weekAnchor += 7 * DAY; S.schedDay = null; schedule(); },
+      { type: "date", value: dateVal(S.weekAnchor), onPick: (v) => { S.weekAnchor = pickWeek(v); S.schedDay = null; schedule(); } }));
     if (!days.length) return holder.appendChild(el("div", "msg", "На цей тиждень даних немає."));
 
     const todayUTC = (() => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); })();
@@ -559,7 +605,7 @@
       if (prevN === 4 && n === 5 && list.children.length) { page.appendChild(list.cloneNode(true)); list.innerHTML = ""; page.appendChild(brk()); }
       const row = el("div", "srow");
       row.appendChild(el("div", "badge", n));
-      const b = el("div", "lbody"); b.appendChild(el("div", "lsub", ls.subject_name || "—"));
+      const b = el("div", "lbody"); const sj = el("div", "lsub", ls.subject_name || "—"); const mk2 = marksNode(ls); if (mk2) sj.appendChild(mk2); b.appendChild(sj);
       const m = metaOf(ls); if (m) b.appendChild(el("div", "lmeta", m));
       row.appendChild(b);
       const t = lessonTime(ls, n).split(" – ");
@@ -586,43 +632,50 @@
     try { json = await api(`/api?path=${encodeURIComponent("/schedule/class/get/" + classId)}`); }
     catch (e) { box.innerHTML = ""; return errorBox(box, e); }
     box.innerHTML = "";
-    const days = findDays(json);
-    if (!days.length) { box.appendChild(el("div", "msg", "Не вдалося розпізнати розклад школи. Надішліть мені сирі дані нижче.")); return rawBox(box, json); }
+    const days = parseSchoolDays(json);
+    if (!days.length) { box.appendChild(el("div", "msg", "Не вдалося розпізнати розклад школи.")); return rawBox(box, json); }
     days.forEach((d) => {
       const h = el("div", "dayh"); const l = el("div"); l.append(el("div", "dn", d.name)); h.appendChild(l); box.appendChild(h);
       const list = el("div", "list");
-      d.lessons.forEach((ls, i) => {
-        const b = el("div", "sblock c" + (i % 4));
-        const th = el("div", "th"); th.append(el("div", "badge", ls.n), el("span", null, ls.time)); b.appendChild(th);
-        const it = el("div", "it"); it.append(el("div", "s", ls.subject), el("div", "m", ls.meta)); b.appendChild(it);
+      d.slots.forEach((sl) => {
+        const b = el("div", "sblock");
+        b.style.background = sl.color; b.style.color = "#1B1B21";
+        const th = el("div", "th"); th.append(el("div", "badge", sl.n), el("span", null, BELLS[sl.n] || "")); b.appendChild(th);
+        sl.items.forEach((it, i) => {
+          if (i) b.appendChild(el("div", "sep"));
+          const row = el("div", "it"); const t = el("div", "tx2");
+          t.append(el("div", "s", it.subject), el("div", "m", it.meta)); row.appendChild(t);
+          if (it.group) { const g = el("span", "gbadge"); g.appendChild(svg(ICON.group)); g.appendChild(document.createTextNode(it.group)); g.title = it.groupName; row.appendChild(g); }
+          b.appendChild(row);
+        });
         list.appendChild(b);
       });
       box.appendChild(list);
     });
-    rawBox(box, json);
   }
-  // Look for [{...lessons:[...]}] anywhere in the JSON
-  function findDays(json) {
-    const out = [];
-    (function walk(o, depth) {
-      if (!o || depth > 6) return;
-      if (Array.isArray(o)) {
-        if (o.length && o.every((x) => x && typeof x === "object" && Array.isArray(x.lessons))) {
-          o.forEach((d, di) => out.push({
-            name: d.day_name || d.name || DOW[di] || "",
-            lessons: d.lessons.map((l, i) => ({
-              n: lessonNum(l, i),
-              time: lessonTime(l, lessonNum(l, i)),
-              subject: l.subject_name || l.subject || l.name || "—",
-              meta: [lessonRoom(l), l.teacher_name || l.teacher].filter(Boolean).join(" · "),
-            })),
-          }));
-          return;
-        }
-        o.forEach((x) => walk(x, depth + 1));
-      } else if (typeof o === "object") for (const k in o) walk(o[k], depth + 1);
-    })(json, 0);
-    return out;
+  // week_days:[{name, lessons:{ "1": {…} | {have_many_lessons:true, lessons:[…]} }}]
+  function parseSchoolDays(json) {
+    const wd = (json && json.week_days) || (json && json.data && json.data.week_days) || [];
+    return wd.map((d) => {
+      const raw = d.lessons || {};
+      const keys = Array.isArray(raw) ? raw.map((_, i) => String(i)) : Object.keys(raw).sort((a, b) => a - b);
+      const slots = keys.map((k) => {
+        const e = raw[k]; if (!e) return null;
+        const arr = e.have_many_lessons && Array.isArray(e.lessons) ? e.lessons : [e];
+        const first = arr[0] || {};
+        return {
+          n: first.order_num_in_day || k,
+          color: first.color || "#E8E7EF",
+          items: arr.map((l) => ({
+            subject: l.subject_name || "—",
+            meta: [l.class_room_name, l.teacher_short_name || l.teacher_name].filter(Boolean).join(" · "),
+            group: arr.length > 1 ? (l.group_short_name || l.group_name || "") : "",
+            groupName: l.group_name || "",
+          })),
+        };
+      }).filter(Boolean);
+      return { name: d.name || d.day_name || "", slots };
+    }).filter((d) => d.slots.length);
   }
 
   // ================= SCREEN: grades =================
@@ -635,7 +688,8 @@
     const label = `${first.toLocaleDateString("uk-UA", { month: "long", year: "numeric", timeZone: "UTC" })}`;
     holder.appendChild(switcher(label.charAt(0).toUpperCase() + label.slice(1),
       () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() - 1, 1); grades(); },
-      () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1); grades(); }));
+      () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1); grades(); },
+      { type: "month", value: `${first.getUTCFullYear()}-${pad(first.getUTCMonth() + 1)}`, onPick: (v) => { const [y, m] = v.split("-").map(Number); S.monthAnchor = Date.UTC(y, m - 1, 1); grades(); } }));
     const page = el("div", "page"); holder.appendChild(page);
     page.appendChild(el("div", "spin"));
 
@@ -672,6 +726,7 @@
         const t = el("div", "gt " + (gradeKind(g) === "p" ? "" : gradeKind(g)));
         t.append(el("b", null, g.grade_value), el("span", null, `${pad(dd.getUTCDate())}.${pad(dd.getUTCMonth() + 1)}`));
         t.title = [g.grade_type_name, g.comment && plain(g.comment)].filter(Boolean).join(" — ");
+        if (g.comment && plain(g.comment)) t.appendChild(el("span", "cdot"));
         tiles.appendChild(t);
       }
       card.appendChild(tiles); page.appendChild(card);
@@ -734,9 +789,36 @@
       top.append(ic, tt, el("div", "am", (t.amount > 0 ? "+" : "−") + money(Math.abs(t.amount)) + " грн."));
       c.appendChild(top);
       t.lines.forEach((ln) => { const r = el("div", "line"); r.append(el("span", null, ln.name), el("span", null, ln.qty)); c.appendChild(r); });
+      if (!t.lines.length && t.extra && t.extra.length) { const ch = el("div", "chips"); t.extra.forEach((v) => ch.appendChild(el("span", null, v))); c.appendChild(ch); }
       listBox.appendChild(c);
     });
     rawBox(listBox, json);
+  }
+  const NAME_KEYS = ["name", "title", "product", "product_name", "dish", "dish_name", "good", "goods_name", "item", "description", "text"];
+  // any nested list of things bought (names + qty/price), whatever it's called
+  function collectLines(x) {
+    const out = [];
+    (function walk(o, depth) {
+      if (!o || depth > 4) return;
+      if (Array.isArray(o)) {
+        o.forEach((it) => {
+          if (it && typeof it === "object") {
+            const nm = pick(it, NAME_KEYS);
+            if (nm != null && typeof nm !== "object") {
+              out.push({ name: String(nm), qty: [pick(it, ["quantity", "qty", "count", "amount_items", "amount"]), pick(it, ["price", "cost", "sum", "total"])].filter((v) => v != null).join(" × ") });
+              return;
+            }
+            walk(it, depth + 1);
+          }
+        });
+      } else if (typeof o === "object") for (const k in o) walk(o[k], depth + 1);
+    })(Object.fromEntries(Object.entries(x).filter(([, v]) => v && typeof v === "object")), 0);
+    return out;
+  }
+  // other readable text fields of the transaction (place, comment, check no...)
+  function collectExtra(x) {
+    const skip = /^(id|.*_id|amount|sum|total|price|date|created_at|updated_at|time|datetime|type|type_name|operation|kind|period|balance.*)$/i;
+    return Object.entries(x).filter(([k, v]) => typeof v === "string" && v.trim() && !skip.test(k) && v.length < 80).map(([, v]) => v.trim()).slice(0, 4);
   }
   function findTransactions(json) {
     let best = [];
@@ -751,14 +833,11 @@
             if (!isNaN(amt) && /витрат|трат|spend|expense|debit|out/i.test(type) && amt > 0) amt = -amt;
             const raw = pick(x, ["date", "created_at", "time", "datetime", "period"]) || "";
             const pd = parseDate(raw) || (raw ? new Date(raw) : null);
-            const items = pick(x, ["items", "products", "positions", "dishes", "lines", "details"]);
             return {
               amount: isNaN(amt) ? 0 : amt,
               date: pd && !isNaN(pd) ? dmy(pd) : String(raw),
-              lines: Array.isArray(items) ? items.map((it) => ({
-                name: String(pick(it, ["name", "title", "product", "dish"]) || ""),
-                qty: [pick(it, ["quantity", "qty", "count", "amount_items"]), pick(it, ["price", "cost"])].filter((v) => v != null).join(" × "),
-              })) : [],
+              lines: collectLines(x),
+              extra: collectExtra(x),
             };
           });
         }
