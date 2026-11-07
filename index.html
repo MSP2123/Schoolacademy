@@ -108,6 +108,9 @@
   .feed-item:last-child { border-bottom: none; }
   .feed-time { font-size: 12px; color: var(--muted); }
   .feed-title { font-size: 14px; margin-top: 2px; }
+  .feed-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .feed-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .grade-pill.absent { background: #9a9fa8 !important; font-weight: 600; }
 
   .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 24px 0 10px; }
   .logout-link { font-size: 13px; color: var(--muted); text-decoration: underline; cursor: pointer; }
@@ -305,7 +308,9 @@
           pillWrap.className = "grades";
           const pill = document.createElement("span");
           pill.className = "grade-pill";
+          const isAbsent = /^н$/i.test(String(grade.grade_value).trim());
           pill.style.background = gradeColor(grade.grade_value);
+          if (isAbsent) { pill.classList.add("absent"); pill.title = "Відсутній"; }
           pill.textContent = grade.grade_value;
           pillWrap.appendChild(pill);
 
@@ -332,14 +337,34 @@
       return;
     }
 
+    const plain = (h) => new DOMParser().parseFromString(String(h || ""), "text/html").body.textContent.trim();
     for (const item of items.slice(0, 15)) {
       const el = document.createElement("div");
       el.className = "feed-item";
       const t = document.createElement("div");
       t.className = "feed-time"; t.textContent = item.time_formatted || "";
+      const row = document.createElement("div");
+      row.className = "feed-row";
+      const left = document.createElement("div");
       const ti = document.createElement("div");
-      ti.className = "feed-title"; ti.textContent = item.title || "";
-      el.append(t, ti);
+      ti.className = "feed-title"; ti.textContent = plain(item.title);
+      left.appendChild(ti);
+      const desc = plain(item.description);
+      if (desc && desc !== ti.textContent) {
+        const d = document.createElement("div");
+        d.className = "feed-desc"; d.textContent = desc;
+        left.appendChild(d);
+      }
+      row.appendChild(left);
+      const gm = String(item.icon || "").match(/grades\/(\d+)/);
+      if (gm) {
+        const pill = document.createElement("span");
+        pill.className = "grade-pill";
+        pill.style.background = gradeColor(gm[1]);
+        pill.textContent = gm[1];
+        row.appendChild(pill);
+      }
+      el.append(t, row);
       container.appendChild(el);
     }
   }
