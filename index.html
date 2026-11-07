@@ -392,7 +392,16 @@
   const daysOf = (json) => (json && json.data && json.data.week_days) || (json && json.week_days) || [];
 
   // ================= lesson helpers =================
-  const lessonNum = (l, i) => pick(l, ["lesson_number", "lesson_num", "number", "num", "order", "position"]) ?? i + 1;
+  const lessonNum = (l, i) => pick(l, ["order_num_in_day", "lesson_number", "lesson_num"]) ?? i + 1;
+  // Use a number field only if it is a sane, varying sequence for the day; otherwise count 1,2,3...
+  function numberLessons(lessons) {
+    const keys = ["order_num_in_day", "lesson_number", "lesson_num", "lesson_order", "number", "num", "order", "position"];
+    for (const k of keys) {
+      const vals = lessons.map((l) => Number(l[k]));
+      if (vals.every((v) => Number.isInteger(v) && v >= 1 && v <= 15) && (lessons.length < 2 || new Set(vals).size > 1)) return vals;
+    }
+    return lessons.map((_, i) => i + 1);
+  }
   function lessonTime(l, n) {
     const t = pick(l, ["time", "time_formatted", "period"]);
     if (t) return textOf(t).replace(/\s*-\s*/, " – ");
@@ -522,8 +531,9 @@
       page.appendChild(h);
       if (!lessons.length) { page.appendChild(el("div", "msg", "Уроків немає")); continue; }
       const list = el("div", "list");
+      const nums = numberLessons(lessons);
       lessons.forEach((ls, i) => {
-        const n = lessonNum(ls, i);
+        const n = nums[i];
         const time = lessonTime(ls, n);
         const cur = nowIn(dd, time);
         const row = el("div", "les" + (cur ? " cur" : ""));
@@ -600,8 +610,9 @@
     if (!lessons.length) return page.appendChild(el("div", "msg", "Уроків немає"));
     const list = el("div", "list");
     let prevN = null;
+    const nums = numberLessons(lessons);
     lessons.forEach((ls, i) => {
-      const n = lessonNum(ls, i);
+      const n = nums[i];
       if (prevN === 4 && n === 5 && list.children.length) { page.appendChild(list.cloneNode(true)); list.innerHTML = ""; page.appendChild(brk()); }
       const row = el("div", "srow");
       row.appendChild(el("div", "badge", n));
@@ -774,8 +785,12 @@
     if (S.screen !== "canteen") return;
     listBox.innerHTML = "";
     if (!json) return errorBox(listBox, lastErr);
-    const tx = findTransactions(json);
-    if (!tx.length) { listBox.appendChild(el("div", "msg", "Транзакцій за цей період не знайдено (або формат даних невідомий).")); return rawBox(listBox, json); }
+    const pc = parseCanteen(json);
+    if (pc.balance != null) { n.firstChild.textContent = money(pc.balance) + " "; }
+    if (pc.card) bal.firstChild.textContent = `Баланс · Картка №${pc.card}`;
+    const inRange = (t) => !t.dateObj || (t.dateObj.getTime() >= S.from && t.dateObj.getTime() <= S.to);
+    const tx = pc.tx.filter(inRange);
+    if (!tx.length) { listBox.appendChild(el("div", "msg", "Транзакцій за цей період немає.")); return rawBox(listBox, json); }
     let income = 0, spend = 0;
     const shown = tx.filter((t) => S.ctype === "all" || (S.ctype === "in") === (t.amount > 0));
     tx.forEach((t) => (t.amount > 0 ? (income += t.amount) : (spend += t.amount)));
@@ -819,6 +834,25 @@
   function collectExtra(x) {
     const skip = /^(id|.*_id|amount|sum|total|price|date|created_at|updated_at|time|datetime|type|type_name|operation|kind|period|balance.*)$/i;
     return Object.entries(x).filter(([k, v]) => typeof v === "string" && v.trim() && !skip.test(k) && v.length < 80).map(([, v]) => v.trim()).slice(0, 4);
+  }
+  const first1 = (v) => (Array.isArray(v) ? v[0] : v);
+  // real shape: data.{card, balance, transactions:[{transaction_time:"dd.mm.yyyy", sum:-70, type:"debit|credit", dop_info:[{name:[..],sum:[..],quantity:[..]}]}]}
+  function parseCanteen(json) {
+    const d = (json && json.data) || json || {};
+    if (Array.isArray(d.transactions)) {
+      const tx = d.transactions.map((t) => ({
+        amount: Number(t.sum) || 0,
+        dateObj: parseDate(t.transaction_time),
+        date: String(t.transaction_time || ""),
+        lines: (Array.isArray(t.dop_info) ? t.dop_info : []).map((it) => ({
+          name: String(first1(it.name) || "").replace(/\\/g, "/"),
+          qty: [first1(it.quantity), first1(it.sum)].filter((v) => v != null && v !== "").join(" × "),
+        })),
+        extra: [],
+      }));
+      return { card: d.card, balance: d.balance, tx };
+    }
+    return { card: d.card, balance: d.balance, tx: findTransactions(json) };
   }
   function findTransactions(json) {
     let best = [];
