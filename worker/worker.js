@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v11";
+const WORKER_VERSION = "v12";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -227,21 +227,22 @@ async function handleLogin(request) {
   });
 }
 
-async function proxyGet(request, targetPath) {
+// Core authenticated JSON GET. Returns { ok, resp, debug } so callers can
+// retry with other parameters instead of failing on the first non-2xx.
+async function schoolGet(request, targetPath) {
   const sessionCookie = request.headers.get("X-Session-Cookie");
   if (!sessionCookie) {
-    return jsonResponse({ error: "Missing X-Session-Cookie header. Log in first." }, 401);
+    return { ok: false, early: jsonResponse({ error: "Missing X-Session-Cookie header. Log in first." }, 401) };
   }
 
   const incomingUrl = new URL(request.url);
-  const params = new URLSearchParams(incomingUrl.search);
-  if (!params.has("timestamp")) {
-    params.set("timestamp", Date.now().toString());
+  const params = new URLSearchParams();
+  for (const [k, v] of incomingUrl.searchParams) {
+    if (k === "student_id" || k === "week" || k === "page") continue;
+    params.set(k, v);
   }
+  if (!params.has("timestamp")) params.set("timestamp", Date.now().toString());
 
-  // Pull XSRF-TOKEN out of the stored jar (if present) so we can also send
-  // it as X-XSRF-TOKEN - some Laravel/Sanctum setups expect this header
-  // even on GET requests to resolve the session correctly.
   let xsrfHeader = {};
   const xsrfMatch = sessionCookie.match(/XSRF-TOKEN=([^;]+)/);
   if (xsrfMatch) {
@@ -253,7 +254,6 @@ async function proxyGet(request, targetPath) {
   }
 
   const targetUrl = `${SCHOOL_BASE}${targetPath}?${params.toString()}`;
-
   const resp = await fetch(targetUrl, {
     headers: xhrSchoolHeaders({
       Cookie: sessionCookie,
@@ -261,26 +261,24 @@ async function proxyGet(request, targetPath) {
       ...xsrfHeader,
     }),
   });
+  if (resp.ok) return { ok: true, resp };
 
-  if (!resp.ok) {
-    // DEBUG MODE: surface full diagnostic info on any failure, JSON or not.
-    const bodySnippet = (await resp.text()).slice(0, 500);
-    return jsonResponse(
-      {
-        error: "Request to school server failed.",
-        worker_version: WORKER_VERSION,
-        debug_status: resp.status,
-        debug_content_type: resp.headers.get("content-type") || "",
-        debug_target_url: targetUrl,
-        debug_cookie_names_sent: sessionCookie.split(";").map((c) => c.split("=")[0].trim()),
-        debug_xsrf_header_sent: xsrfHeader["X-XSRF-TOKEN"] || null,
-        debug_body_snippet: bodySnippet,
-      },
-      401
-    );
-  }
+  const bodySnippet = (await resp.text()).slice(0, 500);
+  return {
+    ok: false,
+    debug: {
+      debug_status: resp.status,
+      debug_target_url: targetUrl.replace(/timestamp=\d+/, "timestamp=…"),
+      debug_body_snippet: bodySnippet,
+    },
+  };
+}
 
-  return withCors(resp);
+async function proxyGet(request, targetPath) {
+  const r = await schoolGet(request, targetPath);
+  if (r.early) return r.early;
+  if (r.ok) return withCors(r.resp);
+  return jsonResponse({ error: "Request to school server failed.", worker_version: WORKER_VERSION, ...r.debug }, 401);
 }
 
 function htmlUnescape(str) {
@@ -342,6 +340,16 @@ function isoWeek(d = new Date()) {
   return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
 }
 
+// Week number counted from the week containing 1 September of the current
+// school year (Sep-Dec -> this year's Sept, Jan-Aug -> last year's Sept).
+function schoolYearWeek(d = new Date()) {
+  const startYear = d.getUTCMonth() >= 8 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+  const sep1 = new Date(Date.UTC(startYear, 8, 1));
+  const monday = new Date(sep1);
+  monday.setUTCDate(sep1.getUTCDate() - ((sep1.getUTCDay() + 6) % 7));
+  return Math.floor((d - monday) / (7 * 86400000)) + 1;
+}
+
 export default {
   async fetch(request) {
     if (request.method === "OPTIONS") {
@@ -364,10 +372,24 @@ export default {
         if (!studentId) {
           return jsonResponse({ error: "student_id is required" }, 400);
         }
-        // Route is daybook/get/{student}/{week?}. Use the given week, else
-        // the current ISO week.
-        const week = url.searchParams.get("week") || String(isoWeek());
-        return await proxyGet(request, `/daybook/get/${studentId}/${week}`);
+        // Route is daybook/get/{student}/{week?}; the school wants a week
+        // inside the school year. Try: explicit ?week, none (server picks
+        // from timestamp), school-year week, ISO week - first success wins.
+        const explicit = url.searchParams.get("week");
+        const candidates = explicit
+          ? [explicit]
+          : [null, String(schoolYearWeek()), String(isoWeek())];
+        const attempts = [];
+        for (const w of candidates) {
+          const r = await schoolGet(request, `/daybook/get/${studentId}${w ? "/" + w : ""}`);
+          if (r.early) return r.early;
+          if (r.ok) return withCors(r.resp);
+          attempts.push({ week: w, ...r.debug });
+        }
+        return jsonResponse(
+          { error: "Daybook request failed for every week format tried.", worker_version: WORKER_VERSION, attempts },
+          401
+        );
       }
 
       if (url.pathname === "/feed" && request.method === "GET") {
