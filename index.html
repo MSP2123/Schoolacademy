@@ -220,6 +220,12 @@
   .thumb .cap { padding: 6px 12px 8px; font-size: 12px; opacity: .8; }
   .panel a.lk { color: inherit; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 
+  .lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; gap: 12px; }
+  .lightbox img { max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+  .lightbox .bar { display: flex; gap: 10px; }
+  .lightbox button { border: 0; border-radius: 20px; background: var(--chip); color: var(--chip-fg); font-size: 14px; font-weight: 700; padding: 10px 18px; }
+  .thumb .ph { display: flex; align-items: center; justify-content: center; height: 90px; font-size: 13px; opacity: .7; }
+
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
   nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
@@ -610,26 +616,62 @@
   const filesOf = (v) => (Array.isArray(v) ? v.filter((f) => f && f.src) : []);
   const fileUrl = (src) => (/^https?:/i.test(src) ? src : SCHOOL + (src.startsWith("/") ? "" : "/") + src);
   const fmtSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " МБ" : Math.max(1, Math.round(n / 1024)) + " КБ");
+  // Files sit behind the school's login: fetch them through the Worker (which holds the session) as blobs.
+  async function fetchFileBlob(f) {
+    const resp = await fetch(`${WORKER_URL}/file?path=${encodeURIComponent(f.src)}`, { headers: { "X-Session-Cookie": getSession() || "" } });
+    if (!resp.ok) {
+      let msg = ""; try { msg = (await resp.json()).error || ""; } catch {}
+      const e = new Error(msg || `Помилка ${resp.status}`); e.status = resp.status; throw e;
+    }
+    return resp.blob();
+  }
+  function lightbox(url, name, f) {
+    const box = el("div", "lightbox");
+    const img = document.createElement("img"); img.src = url; img.alt = name;
+    const bar = el("div", "bar");
+    const dl = el("button", null, "Завантажити"); dl.onclick = (e) => { e.stopPropagation(); saveBlobUrl(url, name); };
+    const cl = el("button", null, "Закрити"); cl.onclick = () => box.remove();
+    bar.append(dl, cl); box.append(img, bar);
+    box.onclick = () => box.remove();
+    document.body.appendChild(box);
+  }
+  function saveBlobUrl(url, name) {
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
   function filesNode(files) {
     const box = el("div", "files");
     files.forEach((f) => {
-      const url = fileUrl(f.src);
       const name = f.original_name || f.name || "Файл";
       const isImg = /^image\//i.test(f.mime_type || "") || /^(jpe?g|png|gif|webp)$/i.test(f.ext || "");
-      const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener";
-      a.onclick = (e) => e.stopPropagation();
+      let blobUrl = null;
+      const get = async () => { if (!blobUrl) blobUrl = URL.createObjectURL(await fetchFileBlob(f)); return blobUrl; };
+      const fail = (e) => { toast(e && e.status === 401 ? "Увійдіть знову" : "Не вдалося відкрити файл"); handleAuth(e); };
       if (isImg) {
-        a.className = "thumb";
-        const img = document.createElement("img"); img.loading = "lazy"; img.alt = name; img.src = fileUrl(f.preview_src || f.src);
-        img.onerror = () => { a.className = "file"; a.innerHTML = ""; a.append(el("span", "fi2", f.ext || "img"), el("span", "fn", name)); };
-        a.appendChild(img); a.appendChild(el("div", "cap", name));
+        const t = el("div", "thumb"); t.style.cursor = "pointer";
+        const ph = el("div", "ph", "Завантаження фото…"); t.appendChild(ph);
+        const cap = el("div", "cap", name);
+        t.appendChild(cap);
+        t._load = async () => {                       // called the first time the lesson is opened
+          if (t._loaded) return; t._loaded = true;
+          try {
+            const url = await get();
+            const img = document.createElement("img"); img.alt = name; img.src = url;
+            t.replaceChild(img, ph);
+          } catch (e) { ph.textContent = "Натисніть, щоб відкрити"; t._loaded = false; }
+        };
+        t.onclick = async (e) => { e.stopPropagation(); try { lightbox(await get(), name, f); } catch (er) { fail(er); } };
+        box.appendChild(t);
       } else {
-        a.className = "file";
+        const r = el("div", "file"); r.style.cursor = "pointer";
         const ic = el("span", "fi2", (f.ext || "file").slice(0, 4));
         const fn = el("span", "fn", name); if (f.size) fn.appendChild(el("span", "fs", fmtSize(f.size)));
-        a.append(ic, fn);
+        r.append(ic, fn);
+        r.onclick = async (e) => {
+          e.stopPropagation(); toast("Завантаження…");
+          try { saveBlobUrl(await get(), name); } catch (er) { fail(er); }
+        };
+        box.appendChild(r);
       }
-      box.appendChild(a);
     });
     return box;
   }
@@ -711,7 +753,10 @@
         body.appendChild(panel);
         row.appendChild(body);
         const ex = el("button", "expand"); ex.setAttribute("aria-label", "Деталі уроку"); ex.appendChild(svg(ICON.chev));
-        const toggle = () => row.classList.toggle("open");
+        const toggle = () => {
+          row.classList.toggle("open");
+          if (row.classList.contains("open") && !row._hyd) { row._hyd = true; row.querySelectorAll(".thumb").forEach((t) => t._load && t._load()); }
+        };
         ex.onclick = (e) => { e.stopPropagation(); toggle(); };
         row.onclick = toggle;
         row.appendChild(ex);
