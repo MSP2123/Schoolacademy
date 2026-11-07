@@ -372,6 +372,16 @@
     root.style.colorScheme = dark ? "dark" : "light";
     if (dark) root.setAttribute("data-dark", ""); else root.removeAttribute("data-dark");
     const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", pal["--bg"]);
+    // In the Android app: colour the status and navigation bars to match the theme.
+    if (window.AndroidApp && window.AndroidApp.setBars) {
+      try { window.AndroidApp.setBars(cssToHex(pal["--bg"]), cssToHex(pal["--nav"]), dark); } catch {}
+    }
+  }
+  function cssToHex(c) {
+    if (c[0] === "#") return c.length === 4 ? "#" + [...c.slice(1)].map((x) => x + x).join("") : c.slice(0, 7);
+    const m = c.match(/hsl\((\d+)\s+(\d+)%\s+(\d+)%\)/);
+    const [r, g, b] = hslToRgb(+m[1], +m[2], +m[3]);
+    return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
   }
   if (mq && mq.addEventListener) mq.addEventListener("change", applyTheme);
   applyTheme();
@@ -640,6 +650,15 @@
     document.body.appendChild(box);
   }
   function saveBlobUrl(url, name) {
+    // Inside the Android app, blob downloads don't work: hand the bytes to the native side instead.
+    if (window.AndroidApp && window.AndroidApp.saveFile) {
+      fetch(url).then((r) => r.blob()).then((blob) => {
+        const fr = new FileReader();
+        fr.onload = () => window.AndroidApp.saveFile(name, blob.type || "application/octet-stream", String(fr.result).split(",")[1] || "");
+        fr.readAsDataURL(blob);
+      }).catch(() => toast("Не вдалося зберегти файл"));
+      return;
+    }
     const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   }
   function filesNode(files) {
