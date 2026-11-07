@@ -115,6 +115,42 @@
   .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 24px 0 10px; }
   .logout-link { font-size: 13px; color: var(--muted); text-decoration: underline; cursor: pointer; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab { flex: 1; text-align: center; padding: 9px 0; border: 1px solid var(--line); border-radius: 8px; background: white; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .weeknav { display: flex; align-items: stretch; gap: 8px; margin-bottom: 14px; }
+  .weeknav button { margin: 0; width: 44px; padding: 0; font-size: 18px; }
+  .weeknav .week-label { flex: 1; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; font-weight: 600; }
+  .today-btn { margin: 0 0 14px; background: white; color: var(--accent); border: 1px solid var(--line); padding: 8px; font-size: 13px; }
+  .day { background: white; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .day-head { padding: 12px 16px; background: var(--accent-soft); display: flex; justify-content: space-between; align-items: baseline; }
+  .day-head .dn { font-weight: 700; font-size: 15px; }
+  .day-head .dd { font-size: 13px; color: var(--muted); }
+  .day-empty { padding: 14px 16px; font-size: 13px; color: var(--muted); }
+  .lesson { border-top: 1px solid var(--line); padding: 10px 16px; cursor: pointer; }
+  .lesson:first-of-type { border-top: none; }
+  .l-row { display: flex; gap: 12px; align-items: flex-start; }
+  .l-num { width: 20px; flex-shrink: 0; font-weight: 700; color: var(--muted); font-size: 14px; padding-top: 1px; }
+  .l-main { flex: 1; min-width: 0; }
+  .l-subject { font-size: 15px; font-weight: 600; }
+  .l-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .l-grades { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; max-width: 40%; }
+  .g-item { display: flex; align-items: center; gap: 6px; }
+  .g-type { font-size: 11px; color: var(--muted); text-align: right; }
+  .hw-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #fff3d6; color: #8a5b00; margin-left: 6px; vertical-align: middle; }
+  .l-detail { display: none; margin: 8px 0 2px 32px; font-size: 13px; line-height: 1.45; }
+  .lesson.open .l-detail { display: block; }
+  .l-detail b { font-weight: 700; }
+  .l-detail .blk { margin-top: 6px; white-space: pre-wrap; word-break: break-word; }
+  .hw-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .hw-item:last-child { border-bottom: none; }
+  .hw-subj { font-size: 14px; font-weight: 600; }
+  .hw-text { font-size: 13px; margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
+  .hw-date { font-size: 12px; color: var(--muted); }
+  .more-btn { background: white; color: var(--accent); border: 1px solid var(--line); }
+  .debug-link { font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; display: inline-block; margin: 6px 0 24px; }
+  pre.raw { background: #f2f1ec; padding: 10px; border-radius: 6px; font-size: 11px; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow: auto; }
 </style>
 </head>
 <body>
@@ -148,18 +184,36 @@
 
   <div id="app-view">
     <div class="top-bar">
-      <h1>Щоденник</h1>
+      <h1 id="student-name">Щоденник</h1>
       <span class="logout-link" id="logout-btn">Вийти</span>
     </div>
 
-    <div class="section-title">Оцінки цього тижня</div>
-    <div class="card" id="daybook-container">
-      <div class="status">Завантаження...</div>
+    <div class="tabs">
+      <div class="tab active" data-tab="diary">Щоденник</div>
+      <div class="tab" data-tab="homework">Домашні</div>
+      <div class="tab" data-tab="feed">Стрічка</div>
     </div>
 
-    <div class="section-title">Стрічка</div>
-    <div class="card" id="feed-container">
-      <div class="status">Завантаження...</div>
+    <div id="tab-diary">
+      <div class="weeknav">
+        <button id="prev-week" aria-label="Попередній тиждень">‹</button>
+        <div class="week-label" id="week-label">…</div>
+        <button id="next-week" aria-label="Наступний тиждень">›</button>
+      </div>
+      <button class="today-btn" id="today-btn">Поточний тиждень</button>
+      <div id="daybook-container"><div class="status">Завантаження...</div></div>
+      <span class="debug-link" id="debug-link">Показати сирі дані (для налагодження)</span>
+      <pre class="raw" id="raw" style="display:none"></pre>
+    </div>
+
+    <div id="tab-homework" style="display:none">
+      <div class="section-title" style="margin-top:0">Домашнє завдання на цьому тижні</div>
+      <div class="card" id="homework-container"></div>
+    </div>
+
+    <div id="tab-feed" style="display:none">
+      <div class="card" id="feed-container"><div class="status">Завантаження...</div></div>
+      <button class="more-btn" id="feed-more" style="display:none">Показати ще</button>
     </div>
   </div>
 
@@ -190,6 +244,19 @@
     const v = workerInput.value.trim().replace(/\/+$/, "");
     if (v) { WORKER_URL = v; lsSet("school_worker_url", v); }
   });
+
+  function getSession() {
+    try { return localStorage.getItem(STORAGE_KEY_SESSION) || sessionStorage.getItem(STORAGE_KEY_SESSION); } catch { return null; }
+  }
+  function setSession(v, persist) {
+    try {
+      clearSession();
+      (persist ? localStorage : sessionStorage).setItem(STORAGE_KEY_SESSION, v);
+    } catch {}
+  }
+  function clearSession() {
+    try { localStorage.removeItem(STORAGE_KEY_SESSION); sessionStorage.removeItem(STORAGE_KEY_SESSION); } catch {}
+  }
 
   function setStatus(msg, isError) {
     loginStatus.textContent = msg;
@@ -237,7 +304,7 @@
         return;
       }
 
-      sessionStorage.setItem(STORAGE_KEY_SESSION, data.session_cookie);
+      setSession(data.session_cookie, rememberInput.checked);
       showApp();
     } catch (err) {
       setStatus("Не вдалося з'єднатися з сервером: " + err.message, true);
@@ -246,7 +313,7 @@
   }
 
   function logout() {
-    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+    clearSession();
     STUDENT_ID = null;
     lsSet("school_student_id", "");
     appView.style.display = "none";
@@ -255,133 +322,218 @@
     setStatus("", false);
   }
 
-  async function proxiedFetch(path) {
-    const sessionCookie = sessionStorage.getItem(STORAGE_KEY_SESSION);
+  async function proxiedFetch(path, withHeaders) {
+    const sessionCookie = getSession();
     const resp = await fetch(`${WORKER_URL}${path}`, {
-      headers: { "X-Session-Cookie": sessionCookie },
+      headers: { "X-Session-Cookie": sessionCookie || "" },
     });
     const data = await resp.json();
     if (!resp.ok) {
       throw new Error(JSON.stringify(data, null, 2));
     }
-    return data;
+    return withHeaders ? { data, headers: resp.headers } : data;
   }
 
-  function renderDaybook(json) {
-    const container = document.getElementById("daybook-container");
-    const weekDays = (json.data && json.data.week_days) || json.week_days || [];
-    container.innerHTML = "";
-
-    let hasAnyGrades = false;
-
-    for (const day of weekDays) {
-      const lessonsWithGrades = (day.lessons || []).filter(l => l.grades && l.grades.length);
-      if (!lessonsWithGrades.length) continue;
-      hasAnyGrades = true;
-
-      const dayBlock = document.createElement("div");
-      dayBlock.className = "day-block";
-
-      const title = document.createElement("div");
-      title.className = "day-title";
-      title.textContent = `${day.day_name} (${day.date})`;
-      dayBlock.appendChild(title);
-
-      for (const lesson of lessonsWithGrades) {
-        for (const grade of lesson.grades) {
-          const row = document.createElement("div");
-          row.className = "lesson-row";
-
-          const nameCol = document.createElement("div");
-          const nameEl = document.createElement("div");
-          nameEl.className = "lesson-name";
-          nameEl.textContent = lesson.subject_name + (grade.grade_type_name ? ` — ${grade.grade_type_name}` : "");
-          nameCol.appendChild(nameEl);
-          if (grade.comment) {
-            const commentEl = document.createElement("div");
-            commentEl.className = "lesson-comment";
-            commentEl.textContent = grade.comment;
-            nameCol.appendChild(commentEl);
-          }
-
-          const pillWrap = document.createElement("div");
-          pillWrap.className = "grades";
-          const pill = document.createElement("span");
-          pill.className = "grade-pill";
-          const isAbsent = /^н$/i.test(String(grade.grade_value).trim());
-          pill.style.background = gradeColor(grade.grade_value);
-          if (isAbsent) { pill.classList.add("absent"); pill.title = "Відсутній"; }
-          pill.textContent = grade.grade_value;
-          pillWrap.appendChild(pill);
-
-          row.appendChild(nameCol);
-          row.appendChild(pillWrap);
-          dayBlock.appendChild(row);
-        }
-      }
-      container.appendChild(dayBlock);
-    }
-
-    if (!hasAnyGrades) {
-      container.innerHTML = '<div class="status">Оцінок цього тижня ще немає.</div>';
-    }
+  // ---------- helpers ----------
+  const DAY_MS = 86400000;
+  const pick = (o, keys) => { for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k]; return null; };
+  const plain = (h) => new DOMParser().parseFromString(String(h == null ? "" : h), "text/html").body.textContent.trim();
+  function textOf(v) {
+    if (v == null) return "";
+    if (typeof v === "string") return plain(v);
+    if (Array.isArray(v)) return v.map(textOf).filter(Boolean).join("\n");
+    if (typeof v === "object") return textOf(pick(v, ["text", "description", "body", "value", "title", "name"]) ?? "");
+    return String(v);
   }
-
-  function renderFeed(json) {
-    const container = document.getElementById("feed-container");
-    const items = (json.data && json.data.items) || [];
-    container.innerHTML = "";
-
-    if (!items.length) {
-      container.innerHTML = '<div class="status">Немає нових подій.</div>';
-      return;
-    }
-
-    const plain = (h) => new DOMParser().parseFromString(String(h || ""), "text/html").body.textContent.trim();
-    for (const item of items.slice(0, 15)) {
-      const el = document.createElement("div");
-      el.className = "feed-item";
-      const t = document.createElement("div");
-      t.className = "feed-time"; t.textContent = item.time_formatted || "";
-      const row = document.createElement("div");
-      row.className = "feed-row";
-      const left = document.createElement("div");
-      const ti = document.createElement("div");
-      ti.className = "feed-title"; ti.textContent = plain(item.title);
-      left.appendChild(ti);
-      const desc = plain(item.description);
-      if (desc && desc !== ti.textContent) {
-        const d = document.createElement("div");
-        d.className = "feed-desc"; d.textContent = desc;
-        left.appendChild(d);
-      }
-      row.appendChild(left);
-      const gm = String(item.icon || "").match(/grades\/(\d+)/);
-      if (gm) {
-        const pill = document.createElement("span");
-        pill.className = "grade-pill";
-        pill.style.background = gradeColor(gm[1]);
-        pill.textContent = gm[1];
-        row.appendChild(pill);
-      }
-      el.append(t, row);
-      container.appendChild(el);
-    }
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
   }
-
   function showErr(id, msg) {
     const c = document.getElementById(id);
     c.innerHTML = "";
-    const pre = document.createElement("pre");
-    pre.className = "status error";
+    const pre = el("pre", "status error", msg);
     pre.style.cssText = "white-space:pre-wrap;font-size:11px;";
-    pre.textContent = msg;
     c.appendChild(pre);
+  }
+  function gradePill(value) {
+    const pill = el("span", "grade-pill", value);
+    const absent = /^н$/i.test(String(value).trim());
+    pill.style.background = gradeColor(value);
+    if (absent) { pill.classList.add("absent"); pill.title = "Відсутній"; }
+    return pill;
+  }
+
+  // ---------- diary ----------
+  let anchor = Date.now();          // any moment inside the week being viewed
+  let weekMode = null;              // which week format the school accepted
+  let lastWeekJson = null;
+  let weekDays = [];
+
+  function fmtShort(d) {
+    return d.toLocaleDateString("uk-UA", { day: "numeric", month: "long" });
+  }
+  function parseDate(str) {          // "05.11.2026"
+    const m = String(str || "").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+    return m ? new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])) : null;
+  }
+
+  function lessonNumber(l, i) { return pick(l, ["lesson_number", "lesson_num", "number", "num", "order", "position"]) ?? i + 1; }
+  function lessonTime(l) {
+    const t = pick(l, ["time", "time_formatted", "period"]);
+    if (t) return textOf(t);
+    const a = pick(l, ["start_time", "time_start", "begin", "start", "from"]);
+    const b = pick(l, ["end_time", "time_end", "end", "finish", "to"]);
+    return a && b ? `${a} – ${b}` : a || "";
+  }
+
+  function renderDaybook(json) {
+    lastWeekJson = json;
+    const container = document.getElementById("daybook-container");
+    weekDays = (json.data && json.data.week_days) || json.week_days || [];
+    container.innerHTML = "";
+
+    // header: real dates of the week we actually got
+    const dates = weekDays.map((d) => parseDate(d.date)).filter(Boolean);
+    document.getElementById("week-label").textContent = dates.length
+      ? `${fmtShort(dates[0])} – ${fmtShort(dates[dates.length - 1])}`
+      : "Тиждень";
+    if (dates.length) anchor = dates[0].getTime() + 3 * DAY_MS;
+
+    const name = pick(json.data || {}, ["student_name", "student", "user_name", "name"]);
+    if (typeof name === "string") document.getElementById("student-name").textContent = name;
+
+    if (!weekDays.length) {
+      container.innerHTML = '<div class="status">На цей тиждень даних немає.</div>';
+    }
+
+    for (const day of weekDays) {
+      const box = el("div", "day");
+      const head = el("div", "day-head");
+      head.appendChild(el("span", "dn", day.day_name || ""));
+      head.appendChild(el("span", "dd", day.date || ""));
+      box.appendChild(head);
+
+      const lessons = day.lessons || [];
+      if (!lessons.length) box.appendChild(el("div", "day-empty", "Уроків немає"));
+
+      lessons.forEach((l, i) => {
+        const row = el("div", "lesson");
+        const top = el("div", "l-row");
+        top.appendChild(el("div", "l-num", lessonNumber(l, i)));
+
+        const main = el("div", "l-main");
+        const subj = el("div", "l-subject", l.subject_name || "—");
+        const hw = textOf(l.homework);
+        if (hw) subj.appendChild(el("span", "hw-badge", "Д/з"));
+        main.appendChild(subj);
+        const meta = [lessonTime(l), pick(l, ["room", "class_room", "classroom", "cabinet"]), l.teacher_name].filter(Boolean).join(" · ");
+        if (meta) main.appendChild(el("div", "l-meta", meta));
+        top.appendChild(main);
+
+        const gradesBox = el("div", "l-grades");
+        for (const g of l.grades || []) {
+          const item = el("div", "g-item");
+          if (g.grade_type_name) item.appendChild(el("span", "g-type", g.grade_type_name));
+          item.appendChild(gradePill(g.grade_value));
+          gradesBox.appendChild(item);
+        }
+        top.appendChild(gradesBox);
+        row.appendChild(top);
+
+        const detail = el("div", "l-detail");
+        const topic = textOf(l.topic);
+        if (topic) { const b = el("div", "blk"); b.append(el("b", null, "Тема: "), topic); detail.appendChild(b); }
+        if (hw) { const b = el("div", "blk"); b.append(el("b", null, "Домашнє завдання: "), hw); detail.appendChild(b); }
+        for (const g of l.grades || []) {
+          if (g.comment) { const b = el("div", "blk"); b.append(el("b", null, `Коментар (${g.grade_value}): `), plain(g.comment)); detail.appendChild(b); }
+        }
+        if (!detail.children.length) detail.appendChild(el("div", "blk", "Немає додаткових відомостей."));
+        row.appendChild(detail);
+        row.addEventListener("click", () => row.classList.toggle("open"));
+        box.appendChild(row);
+      });
+      container.appendChild(box);
+    }
+
+    renderHomework();
+    document.getElementById("raw").textContent = JSON.stringify(json, null, 1).slice(0, 6000);
+  }
+
+  function renderHomework() {
+    const c = document.getElementById("homework-container");
+    c.innerHTML = "";
+    let n = 0;
+    for (const day of weekDays) {
+      for (const l of day.lessons || []) {
+        const hw = textOf(l.homework);
+        if (!hw) continue;
+        n++;
+        const item = el("div", "hw-item");
+        item.appendChild(el("div", "hw-date", `${day.day_name || ""} ${day.date || ""}`.trim()));
+        item.appendChild(el("div", "hw-subj", l.subject_name || ""));
+        item.appendChild(el("div", "hw-text", hw));
+        c.appendChild(item);
+      }
+    }
+    if (!n) c.innerHTML = '<div class="status">На цьому тижні домашніх завдань немає.</div>';
+  }
+
+  async function loadWeek() {
+    const c = document.getElementById("daybook-container");
+    c.innerHTML = '<div class="status">Завантаження...</div>';
+    try {
+      const q = `/daybook?student_id=${STUDENT_ID}&date=${anchor}` + (weekMode ? `&mode=${weekMode}` : "");
+      const { data, headers } = await proxiedFetch(q, true);
+      const m = headers.get("X-Week-Mode");
+      if (m && m !== "explicit") weekMode = m;
+      renderDaybook(data);
+    } catch (err) {
+      showErr("daybook-container", err.message);
+    }
+  }
+
+  // ---------- feed ----------
+  let feedPage = 1;
+  function renderFeed(json, append) {
+    const container = document.getElementById("feed-container");
+    const items = (json.data && json.data.items) || [];
+    if (!append) container.innerHTML = "";
+    if (!items.length && !append) {
+      container.innerHTML = '<div class="status">Немає нових подій.</div>';
+    }
+    for (const item of items) {
+      const box = el("div", "feed-item");
+      box.appendChild(el("div", "feed-time", item.time_formatted || ""));
+      const row = el("div", "feed-row");
+      const left = el("div");
+      const title = plain(item.title);
+      left.appendChild(el("div", "feed-title", title));
+      const desc = plain(item.description);
+      if (desc && desc !== title) left.appendChild(el("div", "feed-desc", desc));
+      row.appendChild(left);
+      const gm = String(item.icon || "").match(/grades\/(\d+)/);
+      if (gm) row.appendChild(gradePill(gm[1]));
+      box.appendChild(row);
+      container.appendChild(box);
+    }
+    document.getElementById("feed-more").style.display = items.length ? "block" : "none";
+  }
+
+  async function loadFeed(append) {
+    try {
+      const { data } = await proxiedFetch(`/feed?page=${feedPage}`, true);
+      renderFeed(data, append);
+    } catch (err) {
+      showErr("feed-container", err.message);
+    }
   }
 
   async function ensureIds() {
     if (STUDENT_ID) return;
-    const d = await proxiedFetch("/discover");
+    const { data: d } = await proxiedFetch("/discover", true);
     if (!d.current_student_id) {
       throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
     }
@@ -394,21 +546,11 @@
       await ensureIds();
     } catch (err) {
       showErr("daybook-container", err.message);
+      return;
     }
-    if (!STUDENT_ID) return;
-    try {
-      const daybookJson = await proxiedFetch(`/daybook?student_id=${STUDENT_ID}`);
-      renderDaybook(daybookJson);
-    } catch (err) {
-      showErr("daybook-container", err.message);
-    }
-
-    try {
-      const feedJson = await proxiedFetch(`/feed?page=1`);
-      renderFeed(feedJson);
-    } catch (err) {
-      showErr("feed-container", err.message);
-    }
+    loadWeek();
+    feedPage = 1;
+    loadFeed(false);
   }
 
   function showApp() {
@@ -417,11 +559,26 @@
     loadData();
   }
 
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === t));
+    for (const name of ["diary", "homework", "feed"]) {
+      document.getElementById("tab-" + name).style.display = name === t.dataset.tab ? "block" : "none";
+    }
+  }));
+  document.getElementById("prev-week").addEventListener("click", () => { anchor -= 7 * DAY_MS; loadWeek(); });
+  document.getElementById("next-week").addEventListener("click", () => { anchor += 7 * DAY_MS; loadWeek(); });
+  document.getElementById("today-btn").addEventListener("click", () => { anchor = Date.now(); loadWeek(); });
+  document.getElementById("feed-more").addEventListener("click", () => { feedPage++; loadFeed(true); });
+  document.getElementById("debug-link").addEventListener("click", () => {
+    const r = document.getElementById("raw");
+    r.style.display = r.style.display === "none" ? "block" : "none";
+  });
+
   loginBtn.addEventListener("click", login);
   logoutBtn.addEventListener("click", logout);
 
   // auto-resume if a session is already stored from this browser tab
-  if (sessionStorage.getItem(STORAGE_KEY_SESSION)) {
+  if (getSession()) {
     showApp();
   }
 </script>
