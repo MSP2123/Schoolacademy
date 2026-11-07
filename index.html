@@ -336,6 +336,7 @@
 
   function loading() { const s = $("screen"); s.innerHTML = ""; s.appendChild(el("div", "spin")); }
   function errorBox(parent, err, raw) {
+    handleAuth(err);   // "not logged in" errors send the user back to the login screen
     parent.appendChild(el("div", "err", err && err.message ? err.message : String(err)));
     if (raw) rawBox(parent, raw);
   }
