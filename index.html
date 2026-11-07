@@ -171,7 +171,6 @@
   let WORKER_URL = (lsGet("school_worker_url") || DEFAULT_WORKER_URL).replace(/\/+$/, "");
   const STORAGE_KEY_SESSION = "school_session_cookie";
   let STUDENT_ID = lsGet("school_student_id");
-  let CLASS_ID = lsGet("school_class_id");
 
   const loginView = document.getElementById("login-view");
   const appView = document.getElementById("app-view");
@@ -245,8 +244,8 @@
 
   function logout() {
     sessionStorage.removeItem(STORAGE_KEY_SESSION);
-    STUDENT_ID = CLASS_ID = null;
-    lsSet("school_student_id", ""); lsSet("school_class_id", "");
+    STUDENT_ID = null;
+    lsSet("school_student_id", "");
     appView.style.display = "none";
     loginView.style.display = "block";
     loginBtn.disabled = false;
@@ -356,14 +355,13 @@
   }
 
   async function ensureIds() {
-    if (STUDENT_ID && CLASS_ID) return;
+    if (STUDENT_ID) return;
     const d = await proxiedFetch("/discover");
-    const hit = d.found && d.found[0];
-    if (!hit) {
-      throw new Error("Не вдалося визначити student_id/class_id автоматично.\n" + JSON.stringify(d.tried, null, 1));
+    if (!d.current_student_id) {
+      throw new Error("Не вдалося визначити учня автоматично.\n" + JSON.stringify(d, null, 1));
     }
-    STUDENT_ID = hit.student_id; CLASS_ID = hit.class_id;
-    lsSet("school_student_id", STUDENT_ID); lsSet("school_class_id", CLASS_ID);
+    STUDENT_ID = d.current_student_id;
+    lsSet("school_student_id", STUDENT_ID);
   }
 
   async function loadData() {
@@ -372,9 +370,9 @@
     } catch (err) {
       showErr("daybook-container", err.message);
     }
-    if (!STUDENT_ID || !CLASS_ID) return;
+    if (!STUDENT_ID) return;
     try {
-      const daybookJson = await proxiedFetch(`/daybook?student_id=${STUDENT_ID}&class_id=${CLASS_ID}`);
+      const daybookJson = await proxiedFetch(`/daybook?student_id=${STUDENT_ID}`);
       renderDaybook(daybookJson);
     } catch (err) {
       showErr("daybook-container", err.message);

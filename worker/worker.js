@@ -30,7 +30,7 @@
  * (Workers & Pages -> Create -> "Hello World" template -> replace all code).
  */
 
-const WORKER_VERSION = "v10";
+const WORKER_VERSION = "v11";
 
 const SCHOOL_BASE = "https://school.academy.com.ua";
 
@@ -283,42 +283,63 @@ async function proxyGet(request, targetPath) {
   return withCors(resp);
 }
 
-// Fetch a few authenticated HTML pages and scan for /daybook/get/{student}/{class}
-// links (or student_id / class_id fields) so the frontend doesn't hardcode ids.
+function htmlUnescape(str) {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
+// The home page ("/") embeds the logged-in account as JSON in
+// <app-header :header_data="..."> (HTML-escaped). That has the active
+// child's id and the children list, so no scraping of daybook pages needed.
 async function handleDiscover(request) {
   const sessionCookie = request.headers.get("X-Session-Cookie");
   if (!sessionCookie) {
     return jsonResponse({ error: "Missing X-Session-Cookie header. Log in first." }, 401);
   }
-  const pages = ["/", "/daybook", "/diary", "/feed"];
-  const found = [];
-  const tried = [];
-  for (const path of pages) {
-    try {
-      const r = await fetch(`${SCHOOL_BASE}${path}`, {
-        headers: commonSchoolHeaders({ Cookie: sessionCookie, Accept: "text/html" }),
-      });
-      const html = await r.text();
-      const snippets = [];
-      const sre = /(student|pupil|class|daybook|diary|child)[^<\n]{0,90}/gi;
-      let sm;
-      while ((sm = sre.exec(html)) && snippets.length < 25) {
-        snippets.push(html.slice(Math.max(0, sm.index - 40), sm.index + 100).replace(/\s+/g, " "));
-      }
-      const links = [...html.matchAll(/(?:href|src|action)=["']([^"']+)["']/gi)].map((x) => x[1]).filter((u) => !/\.(css|png|jpg|svg|ico|woff2?)(\?|$)/i.test(u)).slice(0, 40);
-      tried.push({ path, status: r.status, length: html.length, title: (html.match(/<title>([^<]*)/i) || [])[1], links, snippets });
-      const re = /daybook\/get\/(\d+)\/(\d+)/g;
-      let m;
-      while ((m = re.exec(html))) found.push({ student_id: m[1], class_id: m[2], from: path });
-      const s = html.match(/student[_-]?id["'\s:=\/]+(\d+)/i);
-      const c = html.match(/class[_-]?id["'\s:=\/]+(\d+)/i);
-      if (s && c) found.push({ student_id: s[1], class_id: c[1], from: path });
-      if (found.length) break;
-    } catch (err) {
-      tried.push({ path, error: err.message });
-    }
+  const r = await fetch(`${SCHOOL_BASE}/`, {
+    headers: commonSchoolHeaders({ Cookie: sessionCookie, Accept: "text/html" }),
+  });
+  const page = await r.text();
+  const m = page.match(/:header_data="([^"]+)"/);
+  if (!m) {
+    return jsonResponse(
+      { error: "header_data not found on home page", debug_status: r.status, debug_length: page.length },
+      502
+    );
   }
-  return jsonResponse({ worker_version: WORKER_VERSION, found, tried });
+  let data;
+  try {
+    data = JSON.parse(htmlUnescape(m[1]));
+  } catch (err) {
+    return jsonResponse({ error: "Could not parse header_data: " + err.message }, 502);
+  }
+  const user = data.user || {};
+  const classes = user.children_classes || {};
+  const names = user.children || {};
+  const children = Object.keys({ ...names, ...classes }).map((id) => ({
+    student_id: id,
+    name: typeof names[id] === "string" ? names[id] : "",
+    class_name: (classes[id] && classes[id].name) || "",
+  }));
+  const current = user.current_child && user.current_child.id;
+  return jsonResponse({
+    worker_version: WORKER_VERSION,
+    group: user.group || null,
+    current_student_id: current ? String(current) : children[0] ? children[0].student_id : null,
+    children,
+  });
+}
+
+function isoWeek(d = new Date()) {
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
 }
 
 export default {
@@ -340,11 +361,13 @@ export default {
 
       if (url.pathname === "/daybook" && request.method === "GET") {
         const studentId = url.searchParams.get("student_id");
-        const classId = url.searchParams.get("class_id");
-        if (!studentId || !classId) {
-          return jsonResponse({ error: "student_id and class_id are required" }, 400);
+        if (!studentId) {
+          return jsonResponse({ error: "student_id is required" }, 400);
         }
-        return await proxyGet(request, `/daybook/get/${studentId}/${classId}`);
+        // Route is daybook/get/{student}/{week?}. Use the given week, else
+        // the current ISO week.
+        const week = url.searchParams.get("week") || String(isoWeek());
+        return await proxyGet(request, `/daybook/get/${studentId}/${week}`);
       }
 
       if (url.pathname === "/feed" && request.method === "GET") {
