@@ -209,6 +209,17 @@
   .sw label.on { border-color: var(--ink); }
   .sw label input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
+  .files { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .file { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border-radius: 14px; background: var(--card); color: var(--ink); font-size: 13px; line-height: 18px; }
+  .les.cur .file { background: color-mix(in srgb, var(--on-primary) 18%, transparent); color: var(--on-primary); }
+  .file .fi2 { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+  .file .fn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .file .fs { display: block; font-size: 11px; opacity: .7; }
+  .thumb { display: block; border-radius: 14px; overflow: hidden; background: var(--card); }
+  .thumb img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+  .thumb .cap { padding: 6px 12px 8px; font-size: 12px; opacity: .8; }
+  .panel a.lk { color: inherit; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+
   /* bottom nav */
   nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--nav); }
   nav.bn .in { width: 100%; max-width: 480px; display: flex; align-items: flex-start; height: calc(80px + env(safe-area-inset-bottom)); padding: 12px 8px env(safe-area-inset-bottom); }
@@ -583,9 +594,49 @@
     w.append(p, mid, n);
     return w;
   }
+  // plain text -> nodes, with http(s) links made tappable (no innerHTML)
+  function linkify(text) {
+    const frag = document.createDocumentFragment();
+    String(text).split(/(https?:\/\/[^\s]+)/g).forEach((part, i) => {
+      if (i % 2 === 0) { if (part) frag.appendChild(document.createTextNode(part)); return; }
+      const m = part.match(/^(.*?)([).,;!?]*)$/); const url = m[1], tail = m[2];
+      const a = el("a", "lk", url.length > 60 ? url.slice(0, 57) + "…" : url);
+      a.href = url; a.target = "_blank"; a.rel = "noopener";
+      a.onclick = (e) => e.stopPropagation();
+      frag.appendChild(a); if (tail) frag.appendChild(document.createTextNode(tail));
+    });
+    return frag;
+  }
+  const filesOf = (v) => (Array.isArray(v) ? v.filter((f) => f && f.src) : []);
+  const fileUrl = (src) => (/^https?:/i.test(src) ? src : SCHOOL + (src.startsWith("/") ? "" : "/") + src);
+  const fmtSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " МБ" : Math.max(1, Math.round(n / 1024)) + " КБ");
+  function filesNode(files) {
+    const box = el("div", "files");
+    files.forEach((f) => {
+      const url = fileUrl(f.src);
+      const name = f.original_name || f.name || "Файл";
+      const isImg = /^image\//i.test(f.mime_type || "") || /^(jpe?g|png|gif|webp)$/i.test(f.ext || "");
+      const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener";
+      a.onclick = (e) => e.stopPropagation();
+      if (isImg) {
+        a.className = "thumb";
+        const img = document.createElement("img"); img.loading = "lazy"; img.alt = name; img.src = fileUrl(f.preview_src || f.src);
+        img.onerror = () => { a.className = "file"; a.innerHTML = ""; a.append(el("span", "fi2", f.ext || "img"), el("span", "fn", name)); };
+        a.appendChild(img); a.appendChild(el("div", "cap", name));
+      } else {
+        a.className = "file";
+        const ic = el("span", "fi2", (f.ext || "file").slice(0, 4));
+        const fn = el("span", "fn", name); if (f.size) fn.appendChild(el("span", "fs", fmtSize(f.size)));
+        a.append(ic, fn);
+      }
+      box.appendChild(a);
+    });
+    return box;
+  }
+  const hasHomework = (l) => !!textOf(l.homework) || filesOf(l.homework_files).length > 0;
   const hasComment = (l) => (l.grades || []).some((g) => g.comment && plain(g.comment)) || !!textOf(l.comment);
   function marksNode(l) {
-    const hw = !!textOf(l.homework), cm = hasComment(l);
+    const hw = hasHomework(l), cm = hasComment(l);
     if (!hw && !cm) return null;
     const m = el("span", "marks");
     if (hw) { const x = el("span", "mk"); x.title = "Є домашнє завдання"; x.appendChild(svg(ICON.hw)); m.appendChild(x); }
@@ -646,8 +697,16 @@
         }
         const panel = el("div", "panel");
         const topic = textOf(ls.topic), hw = textOf(ls.homework);
-        const add = (k, v) => { const b = el("div"); b.append(el("div", "k", k), el("div", "v", v || "Не вказано")); panel.appendChild(b); };
-        add("Тема уроку", topic); add("Домашнє завдання", hw);
+        const hwFiles = filesOf(ls.homework_files), lessonFiles = filesOf(ls.lesson_files);
+        const add = (k, v, files) => {
+          const b = el("div"); const val = el("div", "v");
+          if (v) val.appendChild(linkify(v)); else if (!files || !files.length) val.textContent = "Не вказано";
+          if (files && files.length) val.appendChild(filesNode(files));
+          b.append(el("div", "k", k), val); panel.appendChild(b);
+        };
+        add("Тема уроку", topic);
+        add("Домашнє завдання", hw, hwFiles);
+        if (lessonFiles.length) add("Матеріали уроку", "", lessonFiles);
         for (const g of ls.grades || []) if (g.comment) add(`Коментар (${g.grade_value})`, plain(g.comment));
         body.appendChild(panel);
         row.appendChild(body);
