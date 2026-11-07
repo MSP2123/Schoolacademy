@@ -169,6 +169,11 @@
   .fi { background: var(--surf); border-radius: 8px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
   .fi:first-of-type { border-radius: 28px 28px 8px 8px; }
   .fi:last-of-type { border-radius: 8px 8px 28px 28px; }
+  .fi { cursor: pointer; transition: background .2s; }
+  .fi.unread { background: var(--card); }
+  .fi.unread .tt { font-weight: 800; }
+  .fi .udot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 6px; vertical-align: 1px; }
+  .markall { align-self: flex-start; }
   .fi .b { flex: 1; min-width: 0; }
   .fi .tm { font-size: 12px; color: var(--sub); }
   .fi .tt { font-size: 16px; font-weight: 600; margin-top: 2px; }
@@ -285,7 +290,7 @@
   <header class="hdr">
     <h1 id="title">Щоденник</h1>
     <div class="acts">
-      <button class="ibtn" id="bell" aria-label="Сповіщення"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/></svg><span class="dot"></span></button>
+      <button class="ibtn" id="bell" aria-label="Сповіщення"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4l2-2z"/><path d="M10 21h4"/></svg><span class="dot hidden" id="bellDot"></span></button>
       <button class="ibtn sq" id="moodbtn" aria-label="Настрій"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 16a4.5 4.5 0 0 1 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
     </div>
   </header>
@@ -1113,6 +1118,22 @@
   }
 
   // ================= SCREEN: feed (notifications) =================
+  // "Read" state lives on this device, separately for each student.
+  const readKey = () => "school_read_" + (S.studentId || "x");
+  function readSet() { try { return new Set(JSON.parse(lsGet(readKey()) || "[]")); } catch { return new Set(); } }
+  function saveRead(set) { lsSet(readKey(), JSON.stringify([...set].slice(-600))); }
+  const feedId = (it) => String(it.id != null ? it.id : `${it.time_formatted || ""}|${it.title || ""}|${String(it.description || "").slice(0, 60)}`);
+  function updateBell(items) {
+    const rs = readSet();
+    $("bellDot").classList.toggle("hidden", !items.some((it) => !rs.has(feedId(it))));
+  }
+  async function refreshBell() {                        // blue dot on the bell only when something is unread
+    try {
+      const d = await api("/feed?page=1");
+      S.feed1 = (d.data && d.data.items) || [];
+      updateBell(S.feed1);
+    } catch {}
+  }
   async function feed(append) {
     const root = $("screen");
     if (!append) { root.innerHTML = ""; S.feedPage = 1; }
@@ -1128,9 +1149,32 @@
     const sp = $("feedspin"); if (sp) sp.remove();
     const items = (data.data && data.data.items) || [];
     if (!items.length && !append) box.parentNode.appendChild(el("div", "msg", "Немає нових подій."));
+    if (S.feedPage === 1) { S.feed1 = items; updateBell(items); }
+    const rs = readSet();
+    S.feedShown = (append ? S.feedShown || [] : []).concat(items);
+    if (!append && items.length) {
+      const all = el("button", "moreb markall", "Позначити все прочитаним");
+      all.style.cssText = "width:fit-content;padding:0 20px;margin-bottom:4px";
+      all.onclick = () => {
+        const s2 = readSet(); (S.feedShown || []).forEach((x) => s2.add(feedId(x))); saveRead(s2);
+        document.querySelectorAll("#feedbox .fi.unread").forEach((n) => { n.classList.remove("unread"); const d = n.querySelector(".udot"); if (d) d.remove(); });
+        updateBell(S.feed1 || []);
+      };
+      box.parentNode.insertBefore(all, box);
+    }
     for (const it of items) {
-      const r = el("div", "fi"); const b = el("div", "b");
-      b.appendChild(el("div", "tm", it.time_formatted || ""));
+      const id = feedId(it), unread = !rs.has(id);
+      const r = el("div", "fi" + (unread ? " unread" : "")); const b = el("div", "b");
+      const tm = el("div", "tm");
+      if (unread) tm.appendChild(el("span", "udot"));
+      tm.appendChild(document.createTextNode(it.time_formatted || ""));
+      b.appendChild(tm);
+      r.onclick = () => {                                   // tapping marks it as read
+        if (!r.classList.contains("unread")) return;
+        const s2 = readSet(); s2.add(id); saveRead(s2);
+        r.classList.remove("unread"); const d = tm.querySelector(".udot"); if (d) d.remove();
+        updateBell(S.feed1 || []);
+      };
       const title = plain(it.title); b.appendChild(el("div", "tt", title));
       const desc = plain(it.description); if (desc && desc !== title) b.appendChild(el("div", "ds", desc));
       r.appendChild(b);
@@ -1269,6 +1313,7 @@
     loading();
     try { await ensureProfile(); } catch (e) { const r = $("screen"); r.innerHTML = ""; errorBox(r, e); return handleAuth(e); }
     go(S.screen === "feed" ? "diary" : S.screen);
+    refreshBell();
   }
 
   document.querySelectorAll("#bn button").forEach((b) => b.addEventListener("click", () => go(b.dataset.s)));
