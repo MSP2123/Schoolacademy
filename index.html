@@ -185,6 +185,21 @@
   .mk.cm { background: var(--pink); color: var(--pink-fg); }
   .les.cur .mk { background: var(--on-primary); color: var(--primary); }
   .gt { position: relative; }
+  .gt.hasc { cursor: pointer; }
+  .gt.hasc:active { filter: brightness(.95); }
+  .sheet-back { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { width: 100%; max-width: 480px; background: var(--bg); color: var(--ink); border-radius: 28px 28px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; max-height: 80vh; overflow-y: auto; animation: sheetup .18s ease-out; }
+  @keyframes sheetup { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet .sh-top { display: flex; align-items: center; gap: 14px; }
+  .sheet .sh-grade { flex: none; min-width: 56px; height: 56px; padding: 0 12px; border-radius: 18px; background: var(--chip); color: var(--chip-fg); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; }
+  .sheet .sh-grade.a { background: var(--pink); color: var(--pink-fg); }
+  .sheet .sh-grade.t { background: var(--green); color: var(--green-fg); }
+  .sheet .sh-grade.n { background: var(--red); color: var(--red-fg); }
+  .sheet .sh-sub { font-size: 18px; font-weight: 700; line-height: 24px; overflow-wrap: anywhere; }
+  .sheet .sh-meta { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .sheet .sh-comment { background: var(--surf); border-radius: 20px; padding: 14px 16px; font-size: 16px; line-height: 24px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .sheet .sh-comment a { color: inherit; text-decoration: underline; }
+  .sheet .sh-close { height: 48px; border: 0; border-radius: 24px; background: var(--chip); color: var(--chip-fg); font-size: 15px; font-weight: 700; }
   .gt .cdot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
   .switch .mid { position: relative; gap: 8px; font-size: 15px; white-space: nowrap; }
   .switch .mid input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; cursor: pointer; }
@@ -925,6 +940,34 @@
     }).filter((d) => d.slots.length);
   }
 
+  // Bottom sheet with a grade's comment (opened by tapping a grade that has one)
+  function commentSheet(subject, g, dd) {
+    const back = el("div", "sheet-back");
+    const sheet = el("div", "sheet");
+    const close = () => { back.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", onKey);
+
+    const k = gradeKind(g);
+    const top = el("div", "sh-top");
+    top.appendChild(el("div", "sh-grade" + (k === "p" ? "" : " " + k), g.grade_value));
+    const info = el("div");
+    info.appendChild(el("div", "sh-sub", subject));
+    const meta = [dd ? `${pad(dd.getUTCDate())}.${pad(dd.getUTCMonth() + 1)}.${dd.getUTCFullYear()}` : "", k === "n" ? "Відсутній" : g.grade_type_name].filter(Boolean).join(" · ");
+    if (meta) info.appendChild(el("div", "sh-meta", meta));
+    top.appendChild(info);
+    sheet.appendChild(top);
+
+    const c = el("div", "sh-comment"); c.appendChild(linkify(plain(g.comment)));
+    sheet.appendChild(c);
+    const btn = el("button", "sh-close", "Закрити"); btn.onclick = close;
+    sheet.appendChild(btn);
+
+    back.onclick = (e) => { if (e.target === back) close(); };   // tap outside to close
+    back.appendChild(sheet);
+    document.body.appendChild(back);
+  }
+
   // ================= SCREEN: grades =================
   async function grades() {
     const root = $("screen"); root.innerHTML = "";
@@ -973,7 +1016,13 @@
         const t = el("div", "gt " + (gradeKind(g) === "p" ? "" : gradeKind(g)));
         t.append(el("b", null, g.grade_value), el("span", null, `${pad(dd.getUTCDate())}.${pad(dd.getUTCMonth() + 1)}`));
         t.title = [g.grade_type_name, g.comment && plain(g.comment)].filter(Boolean).join(" — ");
-        if (g.comment && plain(g.comment)) t.appendChild(el("span", "cdot"));
+        if (g.comment && plain(g.comment)) {
+          t.appendChild(el("span", "cdot"));
+          t.classList.add("hasc"); t.setAttribute("role", "button"); t.tabIndex = 0;
+          const open = () => commentSheet(s, g, dd);
+          t.onclick = open;
+          t.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+        }
         tiles.appendChild(t);
       }
       card.appendChild(tiles); page.appendChild(card);
