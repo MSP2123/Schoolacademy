@@ -472,7 +472,10 @@
     root.style.colorScheme = dark ? "dark" : "light";
     if (dark) root.setAttribute("data-dark", ""); else root.removeAttribute("data-dark");
     const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", pal["--bg"]);
-    setFavicon(cssToHex(pal["--primary"]));
+    {   // tab icon: same hue as the theme, but calm (low saturation, moderate lightness)
+      const [fh, fs] = rgbToHsl(hexToRgb(cssToHex(pal["--primary"])));
+      setFavicon(cssToHex(dark ? hsl(fh, Math.min(fs, 22), 66) : hsl(fh, Math.min(fs, 34), 34)));
+    }
     // In the Android app: colour the status and navigation bars to match the theme.
     if (window.AndroidApp && window.AndroidApp.setBars) {
       try { window.AndroidApp.setBars(cssToHex(pal["--bg"]), cssToHex(pal["--nav"]), dark); } catch {}
