@@ -311,6 +311,19 @@
     .daycol .chipg b { font-size: 14px; }
     .les { transition: filter .15s; }
     .les:hover { filter: brightness(.97); }
+
+    /* every collapsed lesson card is exactly the same size, so rows line up across the days */
+    .daycol .les { position: relative; box-sizing: border-box; min-height: 144px; }
+    .daycol .lsub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; padding-right: 2px; }
+    .daycol .lmeta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .daycol .expand { position: absolute; top: 8px; right: 2px; }   /* chevron in the corner so the text and grades get the full width */
+    .daycol .lsub { padding-right: 34px; }
+    .daycol .gr { flex-wrap: wrap; gap: 4px; min-height: 26px; }
+    .daycol .chipg span { display: none; }                     /* grade type is shown by the colour; the full label is in the opened lesson */
+    .daycol .chipg { min-width: 30px; min-height: 26px; justify-content: center; padding: 0 6px; border-radius: 10px; }
+    .daycol .chipg b { font-size: 14px; }
+    .daycol .marks { position: absolute; right: 10px; top: 52px; margin: 0; }   /* homework / comment badges sit beside the time */
+    .daycol .les.open .marks { display: none; }
   }
   @media (min-width: 1280px) {
     .days-grid { grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); }
