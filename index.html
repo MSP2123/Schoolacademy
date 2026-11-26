@@ -279,6 +279,7 @@
   .login .st.error { color: var(--error); }
   .login details { margin-top: 18px; font-size: 13px; color: var(--sub); }
   .days-grid { display: flex; flex-direction: column; gap: 12px; }
+  .sched-wide { display: none; }
   .daycol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
   /* ===== wide screens (desktop): side rail + the school week as columns ===== */
@@ -292,7 +293,8 @@
     .toast { bottom: 32px; }
     .switch, .seg, .days { padding-left: 0; padding-right: 0; max-width: 560px; }
     #screen .page { padding-left: 0; padding-right: 0; }
-    #screen .page:not(.diary-page) { max-width: 760px; }
+    #screen .page:not(.diary-page):not(.fullw) { max-width: 760px; }
+    .feed-page { margin-left: auto; margin-right: auto; }
     .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; align-items: start; }
     .weekend-empty { display: none; }
     .daycol { gap: 10px; }
@@ -309,6 +311,29 @@
     .daycol .gr { gap: 6px; padding-top: 8px; }
     .daycol .chipg { min-height: 28px; padding: 0 10px; font-size: 12px; }
     .daycol .chipg b { font-size: 14px; }
+    /* Розклад: every day as a column */
+    .sched-single, .days { display: none; }
+    .sched-wide { display: flex; }
+    .daycol .srow { padding: 10px 6px 10px 12px; gap: 10px; min-height: 84px; box-sizing: border-box; }
+    .daycol .srow .badge { width: 36px; height: 36px; border-radius: 12px; font-size: 16px; }
+    .daycol .srow .lsub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; font-size: 15px; line-height: 20px; }
+    .daycol .srow .lmeta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+    .daycol .srow .tm { font-size: 12px; line-height: 16px; padding-right: 6px; }
+    .daycol .break { padding: 12px 14px; font-size: 13px; margin: 4px 0; border-radius: 18px; }
+    .daycol .sblock { padding: 12px 14px; border-radius: 20px; }
+    .daycol .sblock .it .s { font-size: 15px; }
+    /* Успішність: subjects in a grid */
+    .grades-page { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+    .grades-page > .msg, .grades-page > .spin, .grades-page > .err, .grades-page > details { grid-column: 1 / -1; }
+    /* Їдальня: balance + filters on the left, transactions on the right */
+    .canteen-page { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .canteen-page > .bal, .canteen-page > .two, .canteen-page > .filters { grid-column: 1; }
+    .canteen-page > .listbox { grid-column: 2; grid-row: 1 / span 3; }
+    /* Ще: profile + appearance on the left, menu on the right */
+    .more-page { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .more-page > .me, .more-page > .look { grid-column: 1; }
+    .more-page > .list { grid-column: 2; grid-row: 1 / span 2; }
+    .more-page > .mi.out { grid-column: 2; grid-row: 3; margin-top: 0; }
     .les { transition: filter .15s; }
     .les:hover { filter: brightness(.97); }
 
@@ -912,19 +937,34 @@
       pills.appendChild(b);
     });
     holder.appendChild(pills);
-    const page = el("div", "page"); holder.appendChild(page);
-    const day = days[idx]; const dt = dates[idx];
+    // phone: the selected day only. Desktop: every day as a column (the other one is hidden by CSS).
+    const page = el("div", "page sched-single"); holder.appendChild(page);
+    page.appendChild(scheduleDayCol(days[idx], dates[idx]));
+    const wide = el("div", "page fullw sched-wide"); holder.appendChild(wide);
+    const grid = el("div", "days-grid"); wide.appendChild(grid);
+    let visible = 0;
+    days.forEach((d, i) => {
+      const dt = dates[i];
+      const col = scheduleDayCol(d, dt); grid.appendChild(col);
+      const wd = dt ? dt.getUTCDay() : -1;
+      if ((wd === 0 || wd === 6) && !(d.lessons || []).length) col.classList.add("weekend-empty"); else visible++;
+      if (dt && dt.getTime() === todayUTC) col.classList.add("today");
+    });
+    grid.style.setProperty("--cols", String(Math.max(1, Math.min(7, visible))));
+  }
+  function scheduleDayCol(day, dt) {
+    const col = el("div", "daycol");
     const h = el("div", "dayh"); const l = el("div");
     l.append(el("div", "dn", day.day_name || ""), el("div", "dd", dt ? `${dt.getUTCDate()} ${dt.toLocaleDateString("uk-UA", { month: "long", timeZone: "UTC" })}` : ""));
-    h.appendChild(l); page.appendChild(h);
+    h.appendChild(l); col.appendChild(h);
     const lessons = day.lessons || [];
-    if (!lessons.length) return page.appendChild(el("div", "msg", "Уроків немає"));
-    const list = el("div", "list");
+    if (!lessons.length) { col.appendChild(el("div", "msg", "Уроків немає")); return col; }
+    let list = el("div", "list");
     let prevN = null;
     const nums = numberLessons(lessons);
     lessons.forEach((ls, i) => {
       const n = nums[i];
-      if (prevN === 4 && n === 5 && list.children.length) { page.appendChild(list.cloneNode(true)); list.innerHTML = ""; page.appendChild(brk()); }
+      if (prevN === 4 && n === 5 && list.children.length) { col.appendChild(list); col.appendChild(brk()); list = el("div", "list"); }
       const row = el("div", "srow");
       row.appendChild(el("div", "badge", n));
       const b = el("div", "lbody"); const sj = el("div", "lsub", ls.subject_name || "—"); const mk2 = marksNode(ls); if (mk2) sj.appendChild(mk2); b.appendChild(sj);
@@ -934,7 +974,8 @@
       if (t[0]) { const tm = el("div", "tm"); tm.append(el("div", null, t[0]), el("div", null, t[1] || "")); row.appendChild(tm); }
       list.appendChild(row); prevN = n;
     });
-    page.appendChild(list);
+    col.appendChild(list);
+    return col;
   }
   function brk() {
     const b = el("div", "break"); b.append(el("span", null, "Обідня перерва / Прогулянка"));
@@ -948,7 +989,7 @@
     if (!classId) return holder.appendChild(el("div", "msg", "Не вдалося визначити клас."));
     const chip = el("div", "page"); const c = el("button", "moreb", `${S.profile.class_name || "Клас"} клас`); c.style.width = "fit-content"; c.style.padding = "0 20px"; chip.appendChild(c);
     holder.appendChild(chip);
-    const box = el("div", "page"); holder.appendChild(box);
+    const box = el("div", "page fullw"); holder.appendChild(box);
     box.appendChild(el("div", "spin"));
     let json;
     try { json = await api(`/api?path=${encodeURIComponent("/schedule/class/get/" + classId)}`); }
@@ -956,8 +997,11 @@
     box.innerHTML = "";
     const days = parseSchoolDays(json);
     if (!days.length) { box.appendChild(el("div", "msg", "Не вдалося розпізнати розклад школи.")); return rawBox(box, json); }
+    const grid = el("div", "days-grid"); box.appendChild(grid);
+    grid.style.setProperty("--cols", String(Math.max(1, Math.min(7, days.length))));
     days.forEach((d) => {
-      const h = el("div", "dayh"); const l = el("div"); l.append(el("div", "dn", d.name)); h.appendChild(l); box.appendChild(h);
+      const col = el("div", "daycol"); grid.appendChild(col);
+      const h = el("div", "dayh"); const l = el("div"); l.append(el("div", "dn", d.name)); h.appendChild(l); col.appendChild(h);
       const list = el("div", "list");
       d.slots.forEach((sl) => {
         const b = el("div", "sblock");
@@ -972,8 +1016,9 @@
         });
         list.appendChild(b);
       });
-      box.appendChild(list);
+      col.appendChild(list);
     });
+    rawBox(box, json);
   }
   // week_days:[{name, lessons:{ "1": {…} | {have_many_lessons:true, lessons:[…]} }}]
   function parseSchoolDays(json) {
@@ -1040,7 +1085,7 @@
       () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() - 1, 1); grades(); },
       () => { S.monthAnchor = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1); grades(); },
       { type: "month", value: `${first.getUTCFullYear()}-${pad(first.getUTCMonth() + 1)}`, onPick: (v) => { const [y, m] = v.split("-").map(Number); S.monthAnchor = Date.UTC(y, m - 1, 1); grades(); } }));
-    const page = el("div", "page"); holder.appendChild(page);
+    const page = el("div", "page fullw grades-page"); holder.appendChild(page);
     page.appendChild(el("div", "spin"));
 
     // all weeks that touch the month
@@ -1096,7 +1141,7 @@
 
   async function canteen() {
     const root = $("screen"); root.innerHTML = "";
-    const page = el("div", "page"); root.appendChild(page);
+    const page = el("div", "page fullw canteen-page"); root.appendChild(page);
     const bal = el("div", "bal");
     bal.appendChild(el("div", "l", "Баланс"));
     const n = el("div", "n"); const b = S.profile && S.profile.canteen_balance;
@@ -1116,7 +1161,7 @@
     [["all", "Всі"], ["in", "Надходження"], ["out", "Трати"]].forEach(([v, t]) => { const o = el("option", null, t); o.value = v; if (S.ctype === v) o.selected = true; sel.appendChild(o); });
     sel.onchange = () => { S.ctype = sel.value; canteen(); }; tl.appendChild(sel); f.appendChild(tl);
     page.appendChild(f);
-    const listBox = el("div"); page.appendChild(listBox); listBox.appendChild(el("div", "spin"));
+    const listBox = el("div", "listbox"); page.appendChild(listBox); listBox.appendChild(el("div", "spin"));
 
     // endpoint date format isn't known -> try a few
     const id = S.studentId; let json = null, lastErr = null;
@@ -1248,7 +1293,7 @@
     if (!append) { root.innerHTML = ""; S.feedPage = 1; }
     let box = $("feedbox");
     if (!append) {
-      const page = el("div", "page"); box = el("div", "list"); box.id = "feedbox";
+      const page = el("div", "page feed-page"); box = el("div", "list"); box.id = "feedbox";
       const back = el("button", "moreb", "← Назад"); back.style.cssText = "width:fit-content;padding:0 20px"; back.onclick = () => go(S.prevScreen || "diary");
       page.append(back, box, el("div", "spin")); page.lastChild.id = "feedspin"; root.appendChild(page);
     }
@@ -1302,7 +1347,7 @@
   // ================= SCREEN: more =================
   function more() {
     const root = $("screen"); root.innerHTML = "";
-    const page = el("div", "page"); root.appendChild(page);
+    const page = el("div", "page fullw more-page"); root.appendChild(page);
     const me = el("div", "me");
     const nm = (S.profile && S.profile.student_name) || "";
     me.appendChild(el("div", "av", (nm.trim().split(/\s+/)[1] || nm || "?").charAt(0).toUpperCase()));
