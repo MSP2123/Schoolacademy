@@ -326,14 +326,14 @@
     .grades-page { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
     .grades-page > .msg, .grades-page > .spin, .grades-page > .err, .grades-page > details { grid-column: 1 / -1; }
     /* Їдальня: balance + filters on the left, transactions on the right */
-    .canteen-page { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .canteen-page { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; gap: 16px; align-items: start; }
     .canteen-page > .bal, .canteen-page > .two, .canteen-page > .filters { grid-column: 1; }
-    .canteen-page > .listbox { grid-column: 2; grid-row: 1 / span 3; }
+    .canteen-page > .listbox { grid-column: 2; grid-row: 1 / span 4; }
     /* Ще: profile + appearance on the left, menu on the right */
-    .more-page { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .more-page { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; gap: 16px; align-items: start; }
     .more-page > .me, .more-page > .look { grid-column: 1; }
-    .more-page > .list { grid-column: 2; grid-row: 1 / span 2; }
-    .more-page > .mi.out { grid-column: 2; grid-row: 3; margin-top: 0; }
+    .more-page > .list { grid-column: 2; grid-row: 1 / span 3; }
+    .more-page > .mi.out { grid-column: 2; grid-row: 4; margin-top: 0; }
     .les { transition: filter .15s; }
     .les:hover { filter: brightness(.97); }
 
