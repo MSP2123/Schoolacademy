@@ -206,9 +206,12 @@
   .sblock .it { display: flex; align-items: center; gap: 10px; }
   .sblock .it .tx2 { flex: 1; min-width: 0; }
   .gbadge { flex: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.75); border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
-  html[data-dark] .sblock { background: color-mix(in srgb, var(--sc) 32%, var(--surf)) !important; color: var(--ink) !important; }
-  html[data-dark] .gbadge { background: color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); }
-  html[data-dark] .sblock .th .badge { background: color-mix(in srgb, var(--ink) 16%, transparent); }
+  /* dark mode: keep each block's own hue (--sh) but use one clean, consistent dark tone instead of blending with the theme colour */
+  html[data-dark] .sblock { background: hsl(var(--sh, 230) var(--ss, 34%) 23%) !important; color: hsl(var(--sh, 230) 45% 93%) !important; }
+  html[data-dark] .sblock .th { color: hsl(var(--sh, 230) 45% 93%); }
+  html[data-dark] .sblock .sep { background: hsl(var(--sh, 230) 30% 93% / .14); }
+  html[data-dark] .gbadge { background: hsl(var(--sh, 230) 40% 93% / .16); color: hsl(var(--sh, 230) 45% 93%); }
+  html[data-dark] .sblock .th .badge { background: hsl(var(--sh, 230) 40% 93% / .16); color: hsl(var(--sh, 230) 45% 93%); }
   .sblock .sep { height: 1px; background: rgba(0,0,0,.08); }
   .tx .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .tx .chips span { background: var(--card); border-radius: 10px; padding: 4px 10px; font-size: 12px; color: var(--sub); }
@@ -660,6 +663,24 @@
     const cur = now.getHours() * 60 + now.getMinutes();
     return cur >= +m[1] * 60 + +m[2] && cur < +m[3] * 60 + +m[4];
   }
+  // Re-check which lesson is "now" (and which day is today) without re-rendering the page.
+  function refreshNow() {
+    const n = new Date(), todayUTC = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+    document.querySelectorAll(".les[data-time]").forEach((row) => {
+      if (!row.dataset.time) return;
+      const dd = row.dataset.day ? new Date(Number(row.dataset.day)) : null;
+      const cur = nowIn(dd, row.dataset.time);
+      if (row.classList.contains("cur") !== cur) row.classList.toggle("cur", cur);
+      const t = row.querySelector(".ltime");
+      const text = row.dataset.time + (cur ? " · Зараз" : "");
+      if (t && t.textContent !== text) t.textContent = text;
+    });
+    document.querySelectorAll(".daycol[data-day]").forEach((c) => c.classList.toggle("today", Number(c.dataset.day) === todayUTC));
+  }
+  setInterval(refreshNow, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshNow(); });
+  window.addEventListener("focus", refreshNow);
+
   function moodOf(lessons) {
     let abs = false; const nums = [];
     for (const l of lessons) for (const g of l.grades || []) {
@@ -839,6 +860,7 @@
       const lessons = day.lessons || [];
       const dd = parseDate(day.date);
       const col = el("div", "daycol"); grid.appendChild(col);
+      col.dataset.day = dd ? String(dd.getTime()) : "";
       const wd = dd ? dd.getUTCDay() : -1;
       if ((wd === 0 || wd === 6) && !lessons.length) col.classList.add("weekend-empty"); else visibleCols++;   // hide empty Sat/Sun on wide screens
       if (dd && dd.getTime() === todayUTC) col.classList.add("today");
@@ -858,7 +880,8 @@
         const body = el("div", "lbody");
         const subj = el("div", "lsub", ls.subject_name || "—"); const mk = marksNode(ls); if (mk) subj.appendChild(mk);
         body.appendChild(subj);
-        if (time) body.appendChild(el("div", "lmeta", time + (cur ? " · Зараз" : "")));
+        row.dataset.day = dd ? String(dd.getTime()) : ""; row.dataset.time = time || "";   // so the "now" highlight can be refreshed live
+        if (time) body.appendChild(el("div", "lmeta ltime", time + (cur ? " · Зараз" : "")));
         const meta = metaOf(ls); if (meta) body.appendChild(el("div", "lmeta", meta));
         if ((ls.grades || []).length) {
           const g = el("div", "gr"); ls.grades.forEach((x) => g.appendChild(gradeChip(x))); body.appendChild(g);
@@ -1006,6 +1029,11 @@
       d.slots.forEach((sl) => {
         const b = el("div", "sblock");
         b.style.background = sl.color; b.style.color = "#1B1B21"; b.style.setProperty("--sc", sl.color);
+        try {                                                   // hue of the school's colour, used for the dark-mode tone
+          const [hh, ss] = rgbToHsl(hexToRgb(/^#[0-9a-f]{6}$/i.test(sl.color) ? sl.color : "#cbd5e1"));
+          b.style.setProperty("--sh", String(Math.round(hh)));
+          b.style.setProperty("--ss", ss < 12 ? "10%" : "34%");     // greys stay grey
+        } catch {}
         const th = el("div", "th"); th.append(el("div", "badge", sl.n), el("span", null, BELLS[sl.n] || "")); b.appendChild(th);
         sl.items.forEach((it, i) => {
           if (i) b.appendChild(el("div", "sep"));
