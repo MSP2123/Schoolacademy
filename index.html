@@ -486,7 +486,7 @@
   function setFavicon(color) {
     const link = document.getElementById("fav");
     if (!link) return;
-    const svgText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 52 52"><path fill="${color}" fill-rule="evenodd" d="${FAV_PATH}"/></svg>`;
+    const svgText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="30.02 30.05 47.97 47.97"><path fill="${color}" fill-rule="evenodd" d="${FAV_PATH}"/></svg>`;
     link.type = "image/svg+xml";
     link.href = "data:image/svg+xml," + encodeURIComponent(svgText);
   }
