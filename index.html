@@ -278,6 +278,44 @@
   .login .st { margin-top: 14px; font-size: 13px; white-space: pre-wrap; word-break: break-all; min-height: 18px; }
   .login .st.error { color: var(--error); }
   .login details { margin-top: 18px; font-size: 13px; color: var(--sub); }
+  .days-grid { display: flex; flex-direction: column; gap: 12px; }
+  .daycol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  /* ===== wide screens (desktop): side rail + the school week as columns ===== */
+  @media (min-width: 900px) {
+    .app { max-width: none; margin: 0; padding: 0 28px 32px 124px; }
+    nav.bn { right: auto; top: 0; bottom: 0; width: 96px; justify-content: flex-start; }
+    nav.bn .in { flex-direction: column; align-items: center; height: auto; max-width: none; padding: 24px 6px; gap: 14px; }
+    nav.bn button { flex: none; width: 100%; }
+    .hdr { padding: 20px 0 8px 4px; }
+    .who { padding-left: 4px; padding-right: 0; }
+    .toast { bottom: 32px; }
+    .switch, .seg, .days { padding-left: 0; padding-right: 0; max-width: 560px; }
+    #screen .page { padding-left: 0; padding-right: 0; }
+    #screen .page:not(.diary-page) { max-width: 760px; }
+    .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; align-items: start; }
+    .weekend-empty { display: none; }
+    .daycol { gap: 10px; }
+    .daycol .dayh { padding: 8px 4px 0 8px; }
+    .daycol .dayh .dn { font-size: 20px; line-height: 26px; }
+    .daycol .dayh .dd { font-size: 13px; }
+    .daycol .mood { width: 40px; height: 40px; border-radius: 14px; }
+    .daycol.today .dayh .dn { color: var(--primary); }
+    .daycol .les { padding: 12px 4px 12px 12px; gap: 10px; }
+    .daycol .badge { width: 36px; height: 36px; border-radius: 12px; font-size: 16px; }
+    .daycol .lsub { font-size: 15px; line-height: 20px; }
+    .daycol .lmeta { font-size: 12px; line-height: 16px; }
+    .daycol .expand { width: 36px; height: 36px; }
+    .daycol .gr { gap: 6px; padding-top: 8px; }
+    .daycol .chipg { min-height: 28px; padding: 0 10px; font-size: 12px; }
+    .daycol .chipg b { font-size: 14px; }
+    .les { transition: filter .15s; }
+    .les:hover { filter: brightness(.97); }
+  }
+  @media (min-width: 1280px) {
+    .days-grid { grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); }
+  }
+
 </style>
 </head>
 <body>
@@ -751,18 +789,26 @@
     holder.innerHTML = "";
     holder.appendChild(switcher(weekLabel(json, S.weekAnchor), () => { S.weekAnchor -= 7 * DAY; diary(); }, () => { S.weekAnchor += 7 * DAY; diary(); },
       { type: "date", value: dateVal(S.weekAnchor), onPick: (v) => { S.weekAnchor = pickWeek(v); diary(); } }));
-    const page = el("div", "page"); holder.appendChild(page);
+    const page = el("div", "page diary-page"); holder.appendChild(page);
 
     const days = daysOf(json);
     if (!days.length) page.appendChild(el("div", "msg", "На цей тиждень даних немає."));
+    // Each day is a column: stacked on a phone, side by side (the whole school week) on a wide screen.
+    const grid = el("div", "days-grid"); page.appendChild(grid);
+    const todayUTC = (() => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); })();
+    let visibleCols = 0;
     for (const day of days) {
       const lessons = day.lessons || [];
       const dd = parseDate(day.date);
+      const col = el("div", "daycol"); grid.appendChild(col);
+      const wd = dd ? dd.getUTCDay() : -1;
+      if ((wd === 0 || wd === 6) && !lessons.length) col.classList.add("weekend-empty"); else visibleCols++;   // hide empty Sat/Sun on wide screens
+      if (dd && dd.getTime() === todayUTC) col.classList.add("today");
       const h = el("div", "dayh");
       const l = el("div"); l.append(el("div", "dn", day.day_name || ""), el("div", "dd", dd ? `${dd.getUTCDate()} ${dd.toLocaleDateString("uk-UA", { month: "long", timeZone: "UTC" })} ${dd.getUTCFullYear()}` : (day.date || "")));
       h.append(l, moodNode(moodOf(lessons)));
-      page.appendChild(h);
-      if (!lessons.length) { page.appendChild(el("div", "msg", "Уроків немає")); continue; }
+      col.appendChild(h);
+      if (!lessons.length) { col.appendChild(el("div", "msg", "Уроків немає")); continue; }
       const list = el("div", "list");
       const nums = numberLessons(lessons);
       lessons.forEach((ls, i) => {
@@ -811,8 +857,9 @@
         row.appendChild(ex);
         list.appendChild(row);
       });
-      page.appendChild(list);
+      col.appendChild(list);
     }
+    grid.style.setProperty("--cols", String(Math.max(1, Math.min(7, visibleCols))));
     rawBox(page, json);
   }
 
